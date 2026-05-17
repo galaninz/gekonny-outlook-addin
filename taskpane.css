@@ -1,0 +1,274 @@
+/* ===== Gekonny Subject Builder — task pane styles ===== */
+
+:root {
+  --slate: #1f2d3d;
+  --slate-soft: #34465c;
+  --amber: #f0a13c;
+  --amber-dark: #d98a23;
+  --ink: #1f2933;
+  --muted: #6b7785;
+  --line: #e3e8ee;
+  --bg: #ffffff;
+  --bg-soft: #f5f7f9;
+  --ok: #1f8a4c;
+  --err: #c0392b;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  height: 100%;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: "Segoe UI", -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
+  font-size: 14px;
+  line-height: 1.45;
+  -webkit-font-smoothing: antialiased;
+}
+
+#app { padding: 0 0 24px; }
+
+/* ===== Header ===== */
+.header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 18px;
+  background: var(--slate);
+  color: #fff;
+}
+.header-mark {
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+.header-mark .dot {
+  width: 9px; height: 9px;
+  border-radius: 50%;
+  background: var(--amber);
+  display: inline-block;
+}
+.header-title { font-size: 15px; font-weight: 600; }
+.header-sub { font-size: 11px; color: #9fb0c2; margin-top: 1px; }
+
+/* ===== Tabs ===== */
+.tabs {
+  display: flex;
+  border-bottom: 1px solid var(--line);
+}
+.tab {
+  flex: 1;
+  padding: 12px 8px;
+  background: var(--bg-soft);
+  border: none;
+  border-bottom: 2px solid transparent;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--muted);
+  cursor: pointer;
+}
+.tab-active {
+  background: var(--bg);
+  color: var(--slate);
+  border-bottom-color: var(--amber);
+}
+
+/* ===== Panels ===== */
+.panel { padding: 18px; }
+
+.field-label {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--slate);
+  margin: 14px 0 6px;
+}
+.panel > .field-label:first-child { margin-top: 0; }
+
+.input {
+  width: 100%;
+  padding: 9px 11px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  font: inherit;
+  font-size: 13px;
+  color: var(--ink);
+  background: #fff;
+}
+.input:focus {
+  outline: none;
+  border-color: var(--amber);
+  box-shadow: 0 0 0 3px rgba(240,161,60,0.15);
+}
+select.input { cursor: pointer; }
+
+/* ===== Project search list ===== */
+.project-list {
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  margin-top: 4px;
+  max-height: 190px;
+  overflow-y: auto;
+  background: #fff;
+}
+.project-item {
+  padding: 8px 11px;
+  cursor: pointer;
+  border-bottom: 1px solid var(--bg-soft);
+}
+.project-item:last-child { border-bottom: none; }
+.project-item:hover { background: var(--bg-soft); }
+.project-item .code {
+  font-weight: 700;
+  color: var(--slate);
+  font-size: 12px;
+}
+.project-item .name {
+  color: var(--muted);
+  font-size: 12px;
+}
+.project-item .empty {
+  color: var(--muted);
+  font-style: italic;
+  font-size: 12px;
+}
+
+.chosen {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 6px;
+  padding: 8px 11px;
+  background: var(--bg-soft);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--slate);
+}
+.chosen-clear {
+  background: none;
+  border: none;
+  font-size: 17px;
+  line-height: 1;
+  color: var(--muted);
+  cursor: pointer;
+  padding: 0 2px;
+}
+.chosen-clear:hover { color: var(--err); }
+
+.hint {
+  font-size: 11px;
+  color: var(--muted);
+  margin-top: 6px;
+  min-height: 14px;
+}
+.hint.error { color: var(--err); }
+
+/* ===== Segmented control ===== */
+.segmented {
+  display: flex;
+  gap: 0;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  overflow: hidden;
+}
+.seg {
+  flex: 1;
+  padding: 9px 8px;
+  background: #fff;
+  border: none;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--muted);
+  cursor: pointer;
+}
+.seg + .seg { border-left: 1px solid var(--line); }
+.seg-active {
+  background: var(--slate);
+  color: #fff;
+}
+
+/* ===== Preview ===== */
+.preview-box {
+  margin-top: 16px;
+  padding: 11px 12px;
+  background: var(--bg-soft);
+  border: 1px dashed var(--line);
+  border-radius: 6px;
+}
+.preview-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.7px;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 4px;
+}
+.preview-text {
+  font-family: "Cascadia Mono", Consolas, "Courier New", monospace;
+  font-size: 12.5px;
+  color: var(--slate);
+  word-break: break-word;
+}
+
+/* ===== Buttons ===== */
+.btn-primary {
+  width: 100%;
+  margin-top: 16px;
+  padding: 11px 14px;
+  background: var(--amber);
+  color: #1f2d3d;
+  border: none;
+  border-radius: 6px;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.btn-primary:hover { background: var(--amber-dark); }
+.btn-primary:disabled {
+  background: var(--line);
+  color: var(--muted);
+  cursor: not-allowed;
+}
+
+/* ===== Note ===== */
+.note {
+  margin-top: 16px;
+  padding: 10px 12px;
+  background: #fff8ec;
+  border: 1px solid #f3dcae;
+  border-radius: 6px;
+  font-size: 11.5px;
+  color: #6b5526;
+}
+.note code {
+  font-family: "Cascadia Mono", Consolas, monospace;
+  background: #fff;
+  border: 1px solid #f3dcae;
+  border-radius: 3px;
+  padding: 1px 4px;
+  font-size: 11px;
+}
+
+/* ===== Toast ===== */
+.toast {
+  position: fixed;
+  left: 14px; right: 14px; bottom: 14px;
+  padding: 10px 14px;
+  border-radius: 6px;
+  font-size: 12.5px;
+  font-weight: 600;
+  text-align: center;
+  box-shadow: 0 6px 20px rgba(31,45,61,0.22);
+}
+.toast.ok  { background: #e6f5ec; color: var(--ok); border: 1px solid #b9e3c8; }
+.toast.err { background: #fdecea; color: var(--err); border: 1px solid #f2c4bd; }
