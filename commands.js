@@ -14,7 +14,7 @@ Office.onReady(function () {
    (2) new bid intake:    RFP GC - ...   /   RFP SUB - ...
 ---------------------------------------------------------------- */
 var RE_EXISTING = /^\s*\[(SUB|GC)_\d{4}_\d{4}\]\s*\[[^\]]+\]/i;
-var RE_NEWBID   = /^\s*RFP\s+(GC|SUB)\s*-/i;
+var RE_NEWBID   = /\[\s*RFP\s+(GC|SUB)\s*\]/i;
 
 function subjectLooksTagged(subject) {
   if (!subject) { return false; }
@@ -47,7 +47,7 @@ function onMessageSendHandler(event) {
           "This subject is not formatted for Monday automation, so no task will be created.\n\n" +
           "Use the Subject Builder (Gekonny tab) to format it as:\n" +
           "  [SUB_2026_0001] [RFI] description     — for an existing project\n" +
-          "  RFP GC - project name                 — for a new bid\n\n" +
+          "  [RFP GC] project name                 — for a new bid\n\n" +
           "Send anyway if this email is not project-related.",
         cancelLabel: "Fix subject",
         commandId: "openSubjectBuilderButton"

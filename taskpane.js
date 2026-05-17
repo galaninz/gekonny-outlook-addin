@@ -166,7 +166,7 @@ function renderExistingPreview() {
 
 function buildNewSubject() {
   var name = byId("bidName").value.trim();
-  var subject = "RFP " + state.newBidType + " -";
+  var subject = "[RFP " + state.newBidType + "]";
   if (name) { subject += " " + name; }
   return subject;
 }
