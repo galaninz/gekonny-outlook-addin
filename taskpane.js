@@ -5,7 +5,7 @@
 /* ----- CONFIG: change these two values if anything moves ----- */
 var CONFIG = {
   // Helper-flow HTTP URL (Power Automate "GetActiveProjects"). Full URL incl. &sig=
-  PROJECTS_ENDPOINT: "PASTE_YOUR_HELPER_FLOW_URL_HERE",
+  PROJECTS_ENDPOINT: "https://defaultd8bc567963cc4849af903e6e3f8795.cc.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/a267216360ff4b788436407b67580369/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=gX1bour4ERee8isgpJsthBwnI1Va3WLwcWB33tkjSB4",
   // Where new bids are forwarded for intake
   INTAKE_ADDRESS: "build@gekonny.com"
 };
