@@ -8,97 +8,92 @@
   <script src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js"></script>
 </head>
 <body>
-  <div id="app">
+<div id="app">
 
-    <header class="header">
-      <div class="header-mark">[ <span class="dot"></span> ]</div>
-      <div class="header-text">
-        <div class="header-title">Subject Builder</div>
-        <div class="header-sub">Gekonny &middot; Monday automation</div>
-      </div>
-    </header>
+  <header class="header">
+    <div class="header-mark">[ <span class="dot"></span> ]</div>
+    <div class="header-text">
+      <div class="header-title">Subject Builder</div>
+      <div class="header-sub">Gekonny &middot; Monday automation</div>
+    </div>
+  </header>
 
-    <!-- Mode tabs -->
-    <div class="tabs" role="tablist">
-      <button class="tab tab-active" id="tabExisting" role="tab">Existing project</button>
-      <button class="tab" id="tabNew" role="tab">New bid</button>
+  <div class="tabs" role="tablist">
+    <button class="tab tab-active" id="tabExisting" role="tab">Existing project</button>
+    <button class="tab" id="tabNew" role="tab">New bid</button>
+  </div>
+
+  <section class="panel" id="panelExisting">
+
+    <label class="field-label" for="projectSearch">Project (address)</label>
+    <input type="text" id="projectSearch" class="input" placeholder="Search by address or code…" autocomplete="off"/>
+    <div id="projectList" class="project-list" hidden></div>
+    <div id="projectChosen" class="chosen" hidden>
+      <span id="projectChosenText"></span>
+      <button id="projectClear" class="chosen-clear" title="Clear">&times;</button>
+    </div>
+    <div id="projectStatus" class="hint"></div>
+
+    <label class="field-label" for="typeSelect">Type (folder)</label>
+    <select id="typeSelect">
+        <option value="Drawing">01 Drawings</option>
+        <option value="Specification">02 Specifications</option>
+        <option value="Submittal">03 Submittals</option>
+        <option value="RFI" selected>04 RFIs</option>
+        <option value="Schedule">05 Schedule</option>
+        <option value="Takeoff">06 Takeoff</option>
+        <option value="Meeting Minutes">07 Meeting Minutes</option>
+        <option value="Photo">08 Photos</option>
+        <option value="Permit">09 Permits &amp; Violations</option>
+        <option value="Report">10 Reports &amp; Punchlists</option>
+        <option value="Insurance">11 Insurance</option>
+        <option value="Agreement">12 Agreements &amp; Contracts</option>
+        <option value="Lien Waiver">13 Lien Waivers</option>
+        <option value="CO">15 Change Orders</option>
+        <option value="PO">16 Purchase Orders</option>
+        <option value="Warranty">17 Warranty</option>
+        <option value="Requisition">18 Requisitions</option>
+        <option value="Team Doc">19 Team Documents</option>
+    </select>
+
+    <label class="field-label" for="descInput">Short description</label>
+    <input type="text" id="descInput" class="input" placeholder="e.g. HVAC clearance question"/>
+
+    <div class="preview-box">
+      <div class="preview-label">Subject preview</div>
+      <div id="previewExisting" class="preview-text">&mdash;</div>
     </div>
 
-    <!-- ===== EXISTING PROJECT MODE ===== -->
-    <section class="panel" id="panelExisting">
+    <button id="applyExisting" class="btn-primary">Apply to subject</button>
+  </section>
 
-      <label class="field-label" for="projectSearch">Project</label>
-      <input type="text" id="projectSearch" class="input" placeholder="Search by code or name…" autocomplete="off"/>
-      <div id="projectList" class="project-list" hidden></div>
-      <div id="projectChosen" class="chosen" hidden>
-        <span id="projectChosenText"></span>
-        <button id="projectClear" class="chosen-clear" title="Clear">&times;</button>
-      </div>
-      <div id="projectStatus" class="hint"></div>
+  <section class="panel" id="panelNew" hidden>
 
-      <label class="field-label" for="typeSelect">Type</label>
-      <select id="typeSelect">
-        <option value="Drawing">Drawing</option>
-        <option value="Specification">Specification</option>
-        <option value="Submittal">Submittal</option>
-        <option value="RFI">RFI</option>
-        <option value="Schedule">Schedule</option>
-        <option value="Takeoff">Takeoff</option>
-        <option value="Meeting Minutes">Meeting Minutes</option>
-        <option value="Photo">Photo</option>
-        <option value="Permit">Permit</option>
-        <option value="Report">Report</option>
-        <option value="Insurance">Insurance</option>
-        <option value="Agreement">Agreement</option>
-        <option value="Lien Waiver">Lien Waiver</option>
-        <option value="RFP">RFP</option>
-        <option value="CO">CO</option>
-        <option value="PO">PO</option>
-        <option value="Warranty">Warranty</option>
-        <option value="Requisition">Requisition</option>
-        <option value="Team Doc">Team Doc</option>
-      </select>
+    <label class="field-label">Bid type</label>
+    <div class="segmented">
+      <button class="seg seg-active" id="segGC" data-type="GC">GC</button>
+      <button class="seg" id="segSUB" data-type="SUB">SUB</button>
+    </div>
 
-      <label class="field-label" for="descInput">Short description</label>
-      <input type="text" id="descInput" class="input" placeholder="e.g. HVAC clearance question"/>
+    <label class="field-label" for="bidName">Project name / address</label>
+    <input type="text" id="bidName" class="input" placeholder="e.g. 215 West 17th St"/>
 
-      <div class="preview-box">
-        <div class="preview-label">Subject preview</div>
-        <div id="previewExisting" class="preview-text">&mdash;</div>
-      </div>
+    <div class="preview-box">
+      <div class="preview-label">Subject preview</div>
+      <div id="previewNew" class="preview-text">&mdash;</div>
+    </div>
 
-      <button id="applyExisting" class="btn-primary">Apply to subject</button>
-    </section>
+    <button id="applyNew" class="btn-primary">Apply to subject</button>
 
-    <!-- ===== NEW BID MODE ===== -->
-    <section class="panel" id="panelNew" hidden>
+    <div class="note">
+      <strong>Reminder:</strong> after applying, forward this email to
+      <code id="intakeAddr">build@gekonny.com</code> so the bid gets registered in Monday.
+    </div>
+  </section>
 
-      <label class="field-label">Bid type</label>
-      <div class="segmented">
-        <button class="seg seg-active" id="segGC" data-type="GC">GC</button>
-        <button class="seg" id="segSUB" data-type="SUB">SUB</button>
-      </div>
+  <div id="toast" class="toast" hidden></div>
 
-      <label class="field-label" for="bidName">Project name / address</label>
-      <input type="text" id="bidName" class="input" placeholder="e.g. 215 West 17th St"/>
-
-      <div class="preview-box">
-        <div class="preview-label">Subject preview</div>
-        <div id="previewNew" class="preview-text">&mdash;</div>
-      </div>
-
-      <button id="applyNew" class="btn-primary">Apply to subject</button>
-
-      <div class="note">
-        <strong>Reminder:</strong> after applying, forward this email to
-        <code id="intakeAddr">build@gekonny.com</code> so the bid gets registered in Monday.
-      </div>
-    </section>
-
-    <!-- Feedback toast -->
-    <div id="toast" class="toast" hidden></div>
-
-  </div>
-  <script src="taskpane.js"></script>
+</div>
+<script src="taskpane.js"></script>
 </body>
 </html>
