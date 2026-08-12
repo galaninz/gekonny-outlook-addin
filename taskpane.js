@@ -1,23 +1,19 @@
 /* ============================================================
    Gekonny Subject Builder — task pane logic
+   Format: [Type] Project address - description [CODE]
    ============================================================ */
 
-/* ----- CONFIG: change these two values if anything moves ----- */
 var CONFIG = {
-  // Helper-flow HTTP URL (Power Automate "GetActiveProjects"). Full URL incl. &sig=
   PROJECTS_ENDPOINT: "https://defaultd8bc567963cc4849af903e6e3f8795.cc.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/a267216360ff4b788436407b67580369/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=gX1bour4ERee8isgpJsthBwnI1Va3WLwcWB33tkjSB4",
-  // Where new bids are forwarded for intake
   INTAKE_ADDRESS: "build@gekonny.com"
 };
-/* ------------------------------------------------------------- */
 
 var state = {
-  projects: [],          // [{id, name, code, status}]
-  selectedProject: null, // chosen project object
-  newBidType: "GC"       // GC | SUB
+  projects: [],
+  selectedProject: null,
+  newBidType: "GC"
 };
 
-/* Office is ready */
 Office.onReady(function (info) {
   if (info.host === Office.HostType.Outlook) {
     initUI();
@@ -25,13 +21,10 @@ Office.onReady(function (info) {
   }
 });
 
-/* ===================== UI WIRING ===================== */
 function initUI() {
-  // tabs
   byId("tabExisting").addEventListener("click", function () { switchTab("existing"); });
   byId("tabNew").addEventListener("click", function () { switchTab("new"); });
 
-  // existing-project controls
   byId("projectSearch").addEventListener("input", onProjectSearch);
   byId("projectSearch").addEventListener("focus", onProjectSearch);
   byId("projectClear").addEventListener("click", clearProject);
@@ -39,7 +32,6 @@ function initUI() {
   byId("descInput").addEventListener("input", renderExistingPreview);
   byId("applyExisting").addEventListener("click", applyExisting);
 
-  // new-bid controls
   byId("segGC").addEventListener("click", function () { setBidType("GC"); });
   byId("segSUB").addEventListener("click", function () { setBidType("SUB"); });
   byId("bidName").addEventListener("input", renderNewPreview);
@@ -47,7 +39,6 @@ function initUI() {
 
   byId("intakeAddr").textContent = CONFIG.INTAKE_ADDRESS;
 
-  // close project list when clicking elsewhere
   document.addEventListener("click", function (e) {
     if (!e.target.closest("#projectSearch") && !e.target.closest("#projectList")) {
       byId("projectList").hidden = true;
@@ -66,7 +57,6 @@ function switchTab(which) {
   byId("panelNew").hidden = existing;
 }
 
-/* ===================== LOAD PROJECTS ===================== */
 function loadProjects() {
   setProjectStatus("Loading projects…", false);
 
@@ -81,11 +71,10 @@ function loadProjects() {
       return r.json();
     })
     .then(function (data) {
-      // helper-flow returns an array of {id,name,code,status}
       var list = Array.isArray(data) ? data : (data.value || []);
       state.projects = list
         .filter(function (p) { return p && p.code; })
-        .sort(function (a, b) { return (b.code || "").localeCompare(a.code || ""); });
+        .sort(function (a, b) { return (a.name || "").localeCompare(b.name || ""); });
       setProjectStatus(state.projects.length + " projects loaded.", false);
     })
     .catch(function (err) {
@@ -93,7 +82,6 @@ function loadProjects() {
     });
 }
 
-/* ===================== PROJECT SEARCH ===================== */
 function onProjectSearch() {
   var q = byId("projectSearch").value.trim().toLowerCase();
   var listEl = byId("projectList");
@@ -112,8 +100,8 @@ function onProjectSearch() {
     matches.forEach(function (p) {
       var row = document.createElement("div");
       row.className = "project-item";
-      row.innerHTML = '<div class="code">' + esc(p.code) + '</div>' +
-                      '<div class="name">' + esc(p.name || "") + '</div>';
+      row.innerHTML = '<div class="name" style="font-weight:600">' + esc(p.name || p.code) + '</div>' +
+                      '<div class="code" style="opacity:.7;font-size:12px">' + esc(p.code) + '</div>';
       row.addEventListener("click", function () { selectProject(p); });
       listEl.appendChild(row);
     });
@@ -133,7 +121,7 @@ function selectProject(p) {
   byId("projectSearch").value = "";
   byId("projectList").hidden = true;
   byId("projectSearch").hidden = true;
-  byId("projectChosenText").textContent = p.code + "  —  " + (p.name || "");
+  byId("projectChosenText").textContent = (p.name || p.code) + " — " + p.code;
   byId("projectChosen").hidden = false;
   renderExistingPreview();
 }
@@ -147,14 +135,15 @@ function clearProject() {
   renderExistingPreview();
 }
 
-/* ===================== PREVIEW BUILDERS ===================== */
+/* Subject: [Type] Address - description [CODE] */
 function buildExistingSubject() {
   if (!state.selectedProject) { return null; }
-  var code = state.selectedProject.code;
+  var p = state.selectedProject;
   var type = byId("typeSelect").value;
   var desc = byId("descInput").value.trim();
-  var subject = "[" + code + "] [" + type + "]";
-  if (desc) { subject += " " + desc; }
+  var subject = "[" + type + "] " + (p.name || p.code);
+  if (desc) { subject += " - " + desc; }
+  subject += " [" + p.code + "]";
   return subject;
 }
 
@@ -182,7 +171,6 @@ function setBidType(t) {
   renderNewPreview();
 }
 
-/* ===================== APPLY TO SUBJECT ===================== */
 function applyExisting() {
   var subject = buildExistingSubject();
   if (!subject) { return; }
@@ -204,7 +192,6 @@ function setSubject(subject) {
   });
 }
 
-/* ===================== HELPERS ===================== */
 function byId(id) { return document.getElementById(id); }
 
 function esc(s) {
