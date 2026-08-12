@@ -6,9 +6,8 @@
   xmlns:mailappor="http://schemas.microsoft.com/office/mailappversionoverrides/1.0"
   xsi:type="MailApp">
 
-  <!-- ===== Add-in identity ===== -->
   <Id>54258303-a3b2-4093-97cc-d87c7b8a1818</Id>
-  <Version>1.1.0.0</Version>
+  <Version>1.2.0.0</Version>
   <ProviderName>Gekonny</ProviderName>
   <DefaultLocale>en-US</DefaultLocale>
   <DisplayName DefaultValue="Gekonny Subject Builder"/>
@@ -21,7 +20,6 @@
     <AppDomain>https://galaninz.github.io</AppDomain>
   </AppDomains>
 
-  <!-- ===== Hosts ===== -->
   <Hosts>
     <Host Name="Mailbox"/>
   </Hosts>
@@ -32,7 +30,6 @@
     </Sets>
   </Requirements>
 
-  <!-- ===== Default form settings (legacy fallback) ===== -->
   <FormSettings>
     <Form xsi:type="ItemRead">
       <DesktopSettings>
@@ -49,8 +46,87 @@
     <Rule xsi:type="ItemIs" ItemType="Message" FormType="Read"/>
   </Rule>
 
-  <!-- ===== Modern features: task pane buttons + Smart Alert ===== -->
   <VersionOverrides xmlns="http://schemas.microsoft.com/office/mailappversionoverrides" xsi:type="VersionOverridesV1_0">
+    <Requirements>
+      <bt:Sets DefaultMinVersion="1.3">
+        <bt:Set Name="Mailbox"/>
+      </bt:Sets>
+    </Requirements>
+    <Hosts>
+      <Host xsi:type="MailHost">
+        <DesktopFormFactor>
+          <FunctionFile resid="Commands.Url"/>
+
+          <ExtensionPoint xsi:type="MessageComposeCommandSurface">
+            <OfficeTab id="TabDefault">
+              <Group id="gekonnyGroup">
+                <Label resid="GroupLabel"/>
+                <Control xsi:type="Button" id="openSubjectBuilderButton">
+                  <Label resid="TaskpaneButton.Label"/>
+                  <Supertip>
+                    <Title resid="TaskpaneButton.Label"/>
+                    <Description resid="TaskpaneButton.Tooltip"/>
+                  </Supertip>
+                  <Icon>
+                    <bt:Image size="16" resid="Icon.16"/>
+                    <bt:Image size="32" resid="Icon.32"/>
+                    <bt:Image size="80" resid="Icon.80"/>
+                  </Icon>
+                  <Action xsi:type="ShowTaskpane">
+                    <SourceLocation resid="Taskpane.Url"/>
+                  </Action>
+                </Control>
+              </Group>
+            </OfficeTab>
+          </ExtensionPoint>
+
+          <ExtensionPoint xsi:type="MessageReadCommandSurface">
+            <OfficeTab id="TabDefault">
+              <Group id="gekonnyGroupRead">
+                <Label resid="GroupLabel"/>
+                <Control xsi:type="Button" id="openSubjectBuilderButtonRead">
+                  <Label resid="TaskpaneButton.Label"/>
+                  <Supertip>
+                    <Title resid="TaskpaneButton.Label"/>
+                    <Description resid="TaskpaneButton.Tooltip"/>
+                  </Supertip>
+                  <Icon>
+                    <bt:Image size="16" resid="Icon.16"/>
+                    <bt:Image size="32" resid="Icon.32"/>
+                    <bt:Image size="80" resid="Icon.80"/>
+                  </Icon>
+                  <Action xsi:type="ShowTaskpane">
+                    <SourceLocation resid="Taskpane.Url"/>
+                    <SupportsPinning>true</SupportsPinning>
+                  </Action>
+                </Control>
+              </Group>
+            </OfficeTab>
+          </ExtensionPoint>
+
+        </DesktopFormFactor>
+      </Host>
+    </Hosts>
+
+    <Resources>
+      <bt:Images>
+        <bt:Image id="Icon.16" DefaultValue="https://galaninz.github.io/gekonny-outlook-addin/assets/icon-16.png"/>
+        <bt:Image id="Icon.32" DefaultValue="https://galaninz.github.io/gekonny-outlook-addin/assets/icon-32.png"/>
+        <bt:Image id="Icon.80" DefaultValue="https://galaninz.github.io/gekonny-outlook-addin/assets/icon-80.png"/>
+      </bt:Images>
+      <bt:Urls>
+        <bt:Url id="Taskpane.Url" DefaultValue="https://galaninz.github.io/gekonny-outlook-addin/taskpane.html"/>
+        <bt:Url id="Commands.Url" DefaultValue="https://galaninz.github.io/gekonny-outlook-addin/commands.html"/>
+      </bt:Urls>
+      <bt:ShortStrings>
+        <bt:String id="GroupLabel" DefaultValue="Gekonny"/>
+        <bt:String id="TaskpaneButton.Label" DefaultValue="Subject Builder"/>
+      </bt:ShortStrings>
+      <bt:LongStrings>
+        <bt:String id="TaskpaneButton.Tooltip" DefaultValue="Build a Monday-ready subject: [Type] address - description [CODE]."/>
+      </bt:LongStrings>
+    </Resources>
+
     <VersionOverrides xmlns="http://schemas.microsoft.com/office/mailappversionoverrides/1.1" xsi:type="VersionOverridesV1_1">
       <Requirements>
         <bt:Sets DefaultMinVersion="1.3">
@@ -69,7 +145,6 @@
           <DesktopFormFactor>
             <FunctionFile resid="Commands.Url"/>
 
-            <!-- Ribbon button shown when composing a message -->
             <ExtensionPoint xsi:type="MessageComposeCommandSurface">
               <OfficeTab id="TabDefault">
                 <Group id="gekonnyGroup">
@@ -93,7 +168,6 @@
               </OfficeTab>
             </ExtensionPoint>
 
-            <!-- Ribbon button shown when reading a message -->
             <ExtensionPoint xsi:type="MessageReadCommandSurface">
               <OfficeTab id="TabDefault">
                 <Group id="gekonnyGroupRead">
@@ -111,13 +185,13 @@
                     </Icon>
                     <Action xsi:type="ShowTaskpane">
                       <SourceLocation resid="Taskpane.Url"/>
+                      <SupportsPinning>true</SupportsPinning>
                     </Action>
                   </Control>
                 </Group>
               </OfficeTab>
             </ExtensionPoint>
 
-            <!-- Smart Alert: runs when the user sends a message -->
             <ExtensionPoint xsi:type="LaunchEvent">
               <LaunchEvents>
                 <LaunchEvent Type="OnMessageSend" FunctionName="onMessageSendHandler" SendMode="PromptUser"/>
