@@ -7,17 +7,17 @@
   xsi:type="MailApp">
 
   <Id>54258303-a3b2-4093-97cc-d87c7b8a1818</Id>
-  <Version>1.2.0.0</Version>
+  <Version>1.2.1.0</Version>
   <ProviderName>Gekonny</ProviderName>
   <DefaultLocale>en-US</DefaultLocale>
   <DisplayName DefaultValue="Gekonny Subject Builder"/>
   <Description DefaultValue="Format email subjects for Monday automation: pick a project and type, or register a new bid."/>
-  <IconUrl DefaultValue="https://galaninz.github.io/gekonny-outlook-addin/assets/icon-64.png"/>
-  <HighResolutionIconUrl DefaultValue="https://galaninz.github.io/gekonny-outlook-addin/assets/icon-128.png"/>
-  <SupportUrl DefaultValue="https://galaninz.github.io/gekonny-outlook-addin/"/>
+  <IconUrl DefaultValue="https://zakhargalan.in/gekonny-outlook-addin/assets/icon-64.png"/>
+  <HighResolutionIconUrl DefaultValue="https://zakhargalan.in/gekonny-outlook-addin/assets/icon-128.png"/>
+  <SupportUrl DefaultValue="https://zakhargalan.in/gekonny-outlook-addin/"/>
 
   <AppDomains>
-    <AppDomain>https://galaninz.github.io</AppDomain>
+    <AppDomain>https://zakhargalan.in</AppDomain>
   </AppDomains>
 
   <Hosts>
@@ -33,7 +33,7 @@
   <FormSettings>
     <Form xsi:type="ItemRead">
       <DesktopSettings>
-        <SourceLocation DefaultValue="https://galaninz.github.io/gekonny-outlook-addin/taskpane.html"/>
+        <SourceLocation DefaultValue="https://zakhargalan.in/gekonny-outlook-addin/taskpane.html"/>
         <RequestedHeight>250</RequestedHeight>
       </DesktopSettings>
     </Form>
@@ -110,13 +110,13 @@
 
     <Resources>
       <bt:Images>
-        <bt:Image id="Icon.16" DefaultValue="https://galaninz.github.io/gekonny-outlook-addin/assets/icon-16.png"/>
-        <bt:Image id="Icon.32" DefaultValue="https://galaninz.github.io/gekonny-outlook-addin/assets/icon-32.png"/>
-        <bt:Image id="Icon.80" DefaultValue="https://galaninz.github.io/gekonny-outlook-addin/assets/icon-80.png"/>
+        <bt:Image id="Icon.16" DefaultValue="https://zakhargalan.in/gekonny-outlook-addin/assets/icon-16.png"/>
+        <bt:Image id="Icon.32" DefaultValue="https://zakhargalan.in/gekonny-outlook-addin/assets/icon-32.png"/>
+        <bt:Image id="Icon.80" DefaultValue="https://zakhargalan.in/gekonny-outlook-addin/assets/icon-80.png"/>
       </bt:Images>
       <bt:Urls>
-        <bt:Url id="Taskpane.Url" DefaultValue="https://galaninz.github.io/gekonny-outlook-addin/taskpane.html"/>
-        <bt:Url id="Commands.Url" DefaultValue="https://galaninz.github.io/gekonny-outlook-addin/commands.html"/>
+        <bt:Url id="Taskpane.Url" DefaultValue="https://zakhargalan.in/gekonny-outlook-addin/taskpane.html"/>
+        <bt:Url id="Commands.Url" DefaultValue="https://zakhargalan.in/gekonny-outlook-addin/commands.html"/>
       </bt:Urls>
       <bt:ShortStrings>
         <bt:String id="GroupLabel" DefaultValue="Gekonny"/>
@@ -205,15 +205,15 @@
 
       <Resources>
         <bt:Images>
-          <bt:Image id="Icon.16" DefaultValue="https://galaninz.github.io/gekonny-outlook-addin/assets/icon-16.png"/>
-          <bt:Image id="Icon.32" DefaultValue="https://galaninz.github.io/gekonny-outlook-addin/assets/icon-32.png"/>
-          <bt:Image id="Icon.80" DefaultValue="https://galaninz.github.io/gekonny-outlook-addin/assets/icon-80.png"/>
+          <bt:Image id="Icon.16" DefaultValue="https://zakhargalan.in/gekonny-outlook-addin/assets/icon-16.png"/>
+          <bt:Image id="Icon.32" DefaultValue="https://zakhargalan.in/gekonny-outlook-addin/assets/icon-32.png"/>
+          <bt:Image id="Icon.80" DefaultValue="https://zakhargalan.in/gekonny-outlook-addin/assets/icon-80.png"/>
         </bt:Images>
         <bt:Urls>
-          <bt:Url id="Taskpane.Url" DefaultValue="https://galaninz.github.io/gekonny-outlook-addin/taskpane.html"/>
-          <bt:Url id="Commands.Url" DefaultValue="https://galaninz.github.io/gekonny-outlook-addin/commands.html"/>
-          <bt:Url id="WebViewRuntime.Url" DefaultValue="https://galaninz.github.io/gekonny-outlook-addin/commands.html"/>
-          <bt:Url id="JSRuntime.Url" DefaultValue="https://galaninz.github.io/gekonny-outlook-addin/commands.js"/>
+          <bt:Url id="Taskpane.Url" DefaultValue="https://zakhargalan.in/gekonny-outlook-addin/taskpane.html"/>
+          <bt:Url id="Commands.Url" DefaultValue="https://zakhargalan.in/gekonny-outlook-addin/commands.html"/>
+          <bt:Url id="WebViewRuntime.Url" DefaultValue="https://zakhargalan.in/gekonny-outlook-addin/commands.html"/>
+          <bt:Url id="JSRuntime.Url" DefaultValue="https://zakhargalan.in/gekonny-outlook-addin/commands.js"/>
         </bt:Urls>
         <bt:ShortStrings>
           <bt:String id="GroupLabel" DefaultValue="Gekonny"/>
