@@ -183,13 +183,20 @@ function applyNew() {
 }
 
 function setSubject(subject) {
-  Office.context.mailbox.item.subject.setAsync(subject, function (res) {
-    if (res.status === Office.AsyncResultStatus.Succeeded) {
-      showToast("Subject applied ✓", "ok");
-    } else {
-      showToast("Could not set subject: " + (res.error ? res.error.message : "unknown"), "err");
-    }
-  });
+  var item = Office.context.mailbox.item;
+  if (item && item.subject && typeof item.subject.setAsync === "function") {
+    item.subject.setAsync(subject, function (res) {
+      if (res.status === Office.AsyncResultStatus.Succeeded) {
+        showToast("Subject applied ✓", "ok");
+      } else {
+        showToast("Could not set subject: " + (res.error ? res.error.message : "unknown"), "err");
+      }
+    });
+  } else {
+    /* read mode: open a new draft with the built subject */
+    Office.context.mailbox.displayNewMessageForm({ subject: subject });
+    showToast("Draft opened with subject ✓", "ok");
+  }
 }
 
 function byId(id) { return document.getElementById(id); }
