@@ -7,7 +7,7 @@
 
 var CONFIG = {
   PROJECTS_ENDPOINT: "https://defaultd8bc567963cc4849af903e6e3f8795.cc.environment.api.powerplatform.com/powerautomate/automations/direct/workflows/a267216360ff4b788436407b67580369/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=gX1bour4ERee8isgpJsthBwnI1Va3WLwcWB33tkjSB4",
-  ITEMS_ENDPOINT: "PASTE_ITEMS_FLOW_URL_HERE",
+  ITEMS_ENDPOINT: "https://defaultd8bc567963cc4849af903e6e3f8795.cc.environment.api.powerplatform.com/powerautomate/automations/direct/cu/19/workflows/23f3a10557784d41bde6b691334b3180/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=3uMez77ZGfTDxmWojlyyOErK1fyMM1Zo-9lqtzXmmSU",
   INTAKE_ADDRESS: "build@gekonny.com"
 };
 
