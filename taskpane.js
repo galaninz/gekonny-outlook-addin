@@ -1,8 +1,8 @@
-/* Gekonny Subject Builder — v2.1
+/* Gekonny Subject Builder — v2.2
    Works BOTH inside Outlook (Apply to subject) and as a plain web page (Copy subject).
 
    New item:        [Type] Address - description [CODE]
-   Existing thread: [Type] Address - item name [CODE] {Ref}
+   Existing thread: [Type] Address - item name [CODE] {#itemId}
 */
 
 var CONFIG = {
@@ -255,7 +255,7 @@ function renderItemList() {
     var row = document.createElement("div");
     row.className = "project-item" + (state.selectedItem && state.selectedItem.id === i.id ? " item-active" : "");
     var meta = [];
-    if (i.ref) { meta.push(i.ref); }
+    if (i.ref && i.ref.charAt(0) !== "#") { meta.push(i.ref); }
     if (i.status) { meta.push(i.status); }
     if (i.date) { meta.push(i.date); }
     row.innerHTML = '<div style="font-weight:600">' + esc(i.name) + '</div>' +
@@ -280,7 +280,7 @@ function buildExistingSubject() {
     var it = state.selectedItem;
     if (!it) { return null; }
     var s = "[" + type + "] " + (p.name || p.code) + " - " + it.name + " [" + p.code + "]";
-    if (it.ref) { s += " {" + it.ref + "}"; }
+    if (it.id) { s += " {#" + it.id + "}"; }
     return s;
   }
   var desc = byId("descInput").value.trim();
