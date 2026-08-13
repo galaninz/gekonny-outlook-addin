@@ -26,7 +26,7 @@
   <section class="panel" id="panelExisting">
 
     <label class="field-label" for="projectSearch">Project (address)</label>
-    <input type="text" id="projectSearch" class="input" placeholder="Search by address or code…" autocomplete="off"/>
+    <input type="text" id="projectSearch" class="input" placeholder="Search by address or code&hellip;" autocomplete="off"/>
     <div id="projectList" class="project-list" hidden></div>
     <div id="projectChosen" class="chosen" hidden>
       <span id="projectChosenText"></span>
@@ -34,33 +34,61 @@
     </div>
     <div id="projectStatus" class="hint"></div>
 
+    <div id="manualBox" class="note" hidden>
+      <strong>Project list unavailable.</strong> Enter the project by hand:
+      <input type="text" id="manualName" class="input" style="margin-top:8px" placeholder="Address, e.g. 22 East 10"/>
+      <input type="text" id="manualCode" class="input" style="margin-top:6px" placeholder="Code, e.g. GC_2026_0007"/>
+      <button id="manualUse" class="btn-secondary">Use this project</button>
+    </div>
+
     <label class="field-label" for="typeSelect">Type (folder)</label>
-    <select id="typeSelect">
-        <option value="Drawing">01 Drawings</option>
-        <option value="Specification">02 Specifications</option>
-        <option value="Submittal">03 Submittals</option>
-        <option value="RFI" selected>04 RFIs</option>
-        <option value="Schedule">05 Schedule</option>
-        <option value="Takeoff">06 Takeoff</option>
-        <option value="Meeting Minutes">07 Meeting Minutes</option>
-        <option value="Photo">08 Photos</option>
-        <option value="Permit">09 Permits &amp; Violations</option>
-        <option value="Report">10 Reports &amp; Punchlists</option>
-        <option value="Insurance">11 Insurance</option>
-        <option value="Agreement">12 Agreements &amp; Contracts</option>
-        <option value="Lien Waiver">13 Lien Waivers</option>
-        <option value="CO">15 Change Orders</option>
-        <option value="PO">16 Purchase Orders</option>
-        <option value="Warranty">17 Warranty</option>
-        <option value="Requisition">18 Requisitions</option>
-        <option value="Team Doc">19 Team Documents</option>
+    <select id="typeSelect" class="input">
+      <option value="Drawing">01 Drawings</option>
+      <option value="Specification">02 Specifications</option>
+      <option value="Submittal">03 Submittals</option>
+      <option value="RFI" selected>04 RFIs</option>
+      <option value="Schedule">05 Schedule</option>
+      <option value="Takeoff">06 Takeoff</option>
+      <option value="Meeting Minutes">07 Meeting Minutes</option>
+      <option value="Photo">08 Photos</option>
+      <option value="Permit">09 Permits &amp; Violations</option>
+      <option value="Report">10 Reports &amp; Punchlists</option>
+      <option value="Insurance">11 Insurance</option>
+      <option value="Agreement">12 Agreements &amp; Contracts</option>
+      <option value="Lien Waiver">13 Lien Waivers</option>
+      <option value="CO">15 Change Orders</option>
+      <option value="PO">16 Purchase Orders</option>
+      <option value="Warranty">17 Warranty</option>
+      <option value="Requisition">18 Requisitions</option>
+      <option value="Team Doc">19 Team Documents</option>
     </select>
 
-    <label class="field-label" for="descInput">Short description</label>
-    <input type="text" id="descInput" class="input" placeholder="e.g. HVAC clearance question"/>
+    <label class="field-label">Thread</label>
+    <div class="segmented">
+      <button class="seg seg-active" id="modeNew">New item</button>
+      <button class="seg" id="modeThread">Continue existing</button>
+    </div>
+
+    <div id="blockNewItem">
+      <label class="field-label" for="descInput">Short description</label>
+      <input type="text" id="descInput" class="input" placeholder="e.g. HVAC clearance question"/>
+    </div>
+
+    <div id="blockThread" hidden>
+      <label class="field-label" for="itemSearch">Pick the existing item</label>
+      <div class="row">
+        <input type="text" id="itemSearch" class="input" placeholder="Filter by name or reference&hellip;" autocomplete="off"/>
+        <button id="itemReload" class="btn-icon" title="Reload list">&#8635;</button>
+      </div>
+      <div id="itemList" class="project-list"></div>
+      <div id="itemStatus" class="hint"></div>
+    </div>
 
     <div class="preview-box">
-      <div class="preview-label">Subject preview</div>
+      <div class="preview-head">
+        <span class="preview-label">Subject preview</span>
+        <button id="copyExisting" class="btn-link" type="button">Copy</button>
+      </div>
       <div id="previewExisting" class="preview-text">&mdash;</div>
     </div>
 
@@ -79,7 +107,10 @@
     <input type="text" id="bidName" class="input" placeholder="e.g. 215 West 17th St"/>
 
     <div class="preview-box">
-      <div class="preview-label">Subject preview</div>
+      <div class="preview-head">
+        <span class="preview-label">Subject preview</span>
+        <button id="copyNew" class="btn-link" type="button">Copy</button>
+      </div>
       <div id="previewNew" class="preview-text">&mdash;</div>
     </div>
 
