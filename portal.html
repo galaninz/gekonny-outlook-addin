@@ -5,110 +5,104 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>Gekonny — Subcontractor Portal</title>
 <style>
-  :root { --bg:#151b26; --card:#1e2634; --line:#2c3648; --txt:#e8ecf3; --dim:#93a0b4; --acc:#E8A33D;
-          --ok:#3fb950; --warn:#d29922; --bad:#f85149; }
-  * { box-sizing:border-box; margin:0; }
-  body { background:var(--bg); color:var(--txt); font:15px/1.45 -apple-system,Segoe UI,Roboto,sans-serif; padding:24px 16px 60px; }
-  .wrap { max-width:860px; margin:0 auto; }
-  header { display:flex; align-items:center; gap:12px; margin-bottom:6px; }
-  .mark { color:var(--acc); font-weight:700; letter-spacing:2px; }
-  h1 { font-size:20px; font-weight:600; }
-  .sub { color:var(--dim); margin-bottom:22px; }
-  .card { background:var(--card); border:1px solid var(--line); border-radius:10px; padding:16px 18px; margin-bottom:16px; }
-  .card h2 { font-size:16px; margin-bottom:2px; }
-  .code { color:var(--dim); font-size:12px; margin-bottom:12px; }
-  table { width:100%; border-collapse:collapse; font-size:13.5px; }
-  th { text-align:left; color:var(--dim); font-weight:500; padding:6px 8px 6px 0; border-bottom:1px solid var(--line); }
-  td { padding:7px 8px 7px 0; border-bottom:1px solid var(--line); vertical-align:top; }
-  tr:last-child td { border-bottom:none; }
-  .chip { display:inline-block; padding:2px 9px; border-radius:20px; font-size:12px; background:#2a3446; color:var(--txt); white-space:nowrap; }
-  .chip.ok   { background:rgba(63,185,80,.15);  color:var(--ok); }
-  .chip.warn { background:rgba(210,153,34,.15); color:var(--warn); }
-  .chip.bad  { background:rgba(248,81,73,.15);  color:var(--bad); }
-  .chip.dim  { color:var(--dim); }
-  .section-title { font-size:14px; color:var(--dim); margin:26px 0 10px; text-transform:uppercase; letter-spacing:.6px; }
-  #status { padding:40px 0; text-align:center; color:var(--dim); }
-  #status.error { color:var(--bad); }
-  .footer { color:var(--dim); font-size:12px; margin-top:30px; }
+  body { background:#eceff8; color:#323338; font:14px/1.45 Figtree,Roboto,-apple-system,Segoe UI,sans-serif; margin:0; padding:26px 14px 60px; }
+  .wrap { max-width:960px; margin:0 auto; }
+  h1 { font-size:22px; font-weight:600; margin:0 0 2px; }
+  .sub { color:#676879; margin-bottom:22px; font-size:13px; }
+  .board { background:#fff; border-radius:8px; box-shadow:0 1px 3px rgba(0,0,0,.08); margin-bottom:20px; overflow:hidden; }
+  .ghead { display:flex; align-items:center; gap:10px; padding:14px 16px 10px; }
+  .gbar { width:5px; align-self:stretch; border-radius:4px; }
+  .gname { font-size:16px; font-weight:600; }
+  .gcode { color:#676879; font-size:12px; }
+  table { width:100%; border-collapse:collapse; font-size:13px; }
+  th { text-align:left; color:#676879; font-weight:400; padding:6px 10px; border-top:1px solid #e6e9ef; border-bottom:1px solid #e6e9ef; }
+  td { padding:0; border-bottom:1px solid #e6e9ef; height:36px; }
+  td.txt { padding:6px 10px; }
+  tr:hover td { background:#f5f6f8; }
+  .pill { display:flex; align-items:center; justify-content:center; height:100%; min-height:36px; color:#fff; font-size:12.5px; }
+  .pill.grey { color:#323338; }
+  .section { font-size:15px; font-weight:600; margin:26px 4px 10px; }
+  #status { padding:50px 0; text-align:center; color:#676879; }
+  #status.error { color:#e2445c; }
+  .footer { color:#9699a6; font-size:12px; margin-top:28px; }
 </style>
 </head>
 <body>
 <div class="wrap">
-  <header><span class="mark">[ • ]</span><h1>Subcontractor Portal</h1></header>
+  <h1>Subcontractor Portal</h1>
   <div class="sub" id="who">Gekonny · live status</div>
   <div id="status">Loading your status…</div>
   <div id="content" hidden></div>
-  <div class="footer">Read-only. Questions — reply to your Gekonny contact or build@gekonny.com.<br>
-  Statuses update automatically from our project system.</div>
+  <div class="footer">Read-only. Questions — reply to your Gekonny contact or build@gekonny.com.<br>Statuses update automatically from our project system.</div>
 </div>
 <script>
 var CONFIG = { PORTAL_ENDPOINT: "PASTE_PORTAL_FLOW_URL_HERE" };
-
 var qs = new URLSearchParams(location.search);
 var api = qs.get('api') || CONFIG.PORTAL_ENDPOINT;
 var t = qs.get('t');
+var GROUPBAR = ['#579bfc','#00c875','#a25ddc','#fdab3d','#ff642e','#66ccff'];
 
-function chipClass(s){
-  s = (s||'').toLowerCase();
-  if (!s || s === '-') return 'dim';
-  if (/(approved|paid|executed|closed|done|received|active)/.test(s)) return 'ok';
-  if (/(rejected|expired|overdue|missing|declined)/.test(s)) return 'bad';
-  if (/(pending|review|sent|submitted|open|draft|awaiting)/.test(s)) return 'warn';
-  return '';
+function pillColor(s){
+  s = (s||'').toLowerCase().trim();
+  if (!s || s === '—') return ['#c4c4c4', true];
+  if (/(approved|paid|executed|signed|closed|done|received|active|complete)/.test(s)) return ['#00c875', false];
+  if (/(rejected|expired|overdue|missing|declined|stuck)/.test(s)) return ['#e2445c', false];
+  if (/(pending|review|sent|submitted|awaiting|working|progress|revise)/.test(s)) return ['#fdab3d', false];
+  if (/(open|draft|new)/.test(s)) return ['#579bfc', false];
+  return ['#a25ddc', false];
 }
-function chip(s){ s = s && s.trim() ? s : '—'; return '<span class="chip '+chipClass(s)+'">'+esc(s)+'</span>'; }
+function pill(s){
+  s = s && s.trim() ? s.trim() : '—';
+  var pc = pillColor(s);
+  return '<td><div class="pill'+(pc[1]?' grey':'')+'" style="background:'+pc[0]+'">'+esc(s)+'</div></td>';
+}
 function esc(x){ return String(x).replace(/[&<>"']/g, function(c){
   return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
 
 function render(d){
   document.getElementById('who').textContent = 'Gekonny · ' + (d.sub || '') + ' · live status';
-  var h = '';
+  var h = '', gi = 0;
   (d.projects || []).forEach(function(p){
     if (!p.rows || !p.rows.length) return;
-    h += '<div class="card"><h2>'+esc(p.name)+'</h2><div class="code">'+esc(p.code||'')+'</div>';
-    h += '<table><tr><th>Scope of work</th><th>Contract</th><th>Submittals</th><th>Shop dwgs</th><th>RFI</th><th>Insurance</th></tr>';
+    var bar = GROUPBAR[gi++ % GROUPBAR.length];
+    h += '<div class="board"><div class="ghead"><div class="gbar" style="background:'+bar+'"></div>'
+       + '<div><div class="gname" style="color:'+bar+'">'+esc(p.name)+'</div><div class="gcode">'+esc(p.code||'')+'</div></div></div>';
+    h += '<table><tr><th style="width:28%">Scope of work</th><th>Contract</th><th>Submittals</th><th>Shop dwgs</th><th>RFI</th><th>Insurance</th></tr>';
     p.rows.forEach(function(r){
-      h += '<tr><td>'+esc(r.work)+'</td><td>'+chip(r.contract)+'</td><td>'+chip(r.submittals)+'</td>'
-         + '<td>'+chip(r.shop)+'</td><td>'+chip(r.rfi)+'</td><td>'+chip(r.insurance)+'</td></tr>';
+      h += '<tr><td class="txt">'+esc(r.work)+'</td>'+pill(r.contract)+pill(r.submittals)+pill(r.shop)+pill(r.rfi)+pill(r.insurance)+'</tr>';
     });
     h += '</table></div>';
   });
   if (d.requisitions && d.requisitions.length){
-    h += '<div class="section-title">Requisitions</div><div class="card"><table>'
-       + '<tr><th>Requisition</th><th>Ref #</th><th>Status</th></tr>';
+    h += '<div class="section">Requisitions</div><div class="board"><table>'
+       + '<tr><th style="width:46%">Requisition</th><th>Ref #</th><th>Status</th></tr>';
     d.requisitions.forEach(function(r){
-      h += '<tr><td>'+esc(r.name)+'</td><td>'+esc(r.ref||'—')+'</td><td>'+chip(r.status)+'</td></tr>';
+      h += '<tr><td class="txt">'+esc(r.name)+'</td><td class="txt">'+esc(r.ref||'—')+'</td>'+pill(r.status)+'</tr>';
     });
     h += '</table></div>';
   }
   if (d.deposits && d.deposits.length){
-    h += '<div class="section-title">Deposits</div><div class="card"><table>'
-       + '<tr><th>Project</th><th>Date</th><th>Status</th></tr>';
+    h += '<div class="section">Deposits</div><div class="board"><table>'
+       + '<tr><th style="width:46%">Payment</th><th>Date</th><th>Status</th></tr>';
     d.deposits.forEach(function(r){
-      h += '<tr><td>'+esc(r.project||'—')+'</td><td>'+esc(r.date||'')+'</td><td>'+chip(r.status||'Paid')+'</td></tr>';
+      h += '<tr><td class="txt">'+esc(r.project||'Deposit')+'</td><td class="txt">'+esc(r.date||'')+'</td>'+pill(r.status||'Paid')+'</tr>';
     });
     h += '</table></div>';
   }
-  if (!h) h = '<div class="card">No records linked to your company yet.</div>';
+  if (!h) h = '<div class="board"><div style="padding:22px;color:#676879">No records linked to your company yet.</div></div>';
   document.getElementById('content').innerHTML = h;
   document.getElementById('content').hidden = false;
   document.getElementById('status').hidden = true;
 }
-
-function fail(msg){
-  var s = document.getElementById('status');
-  s.textContent = msg; s.className = 'error';
-}
-
+function fail(m){ var s=document.getElementById('status'); s.textContent=m; s.className='error'; }
 if (!t) { fail('This link is missing its access key. Please use the link from your email.'); }
 else if (api.indexOf('PASTE_') === 0) { fail('Portal backend is not connected yet.'); }
 else {
   fetch(api + (api.indexOf('?')>-1?'&':'?') + 't=' + encodeURIComponent(t))
-    .then(function(r){ if (r.status === 403) throw new Error('This link is not active. Contact your Gekonny manager.');
-                       if (!r.ok) throw new Error('Service unavailable ('+r.status+'). Try again later.');
+    .then(function(r){ if (r.status===403) throw new Error('This link is not active. Contact your Gekonny manager.');
+                       if (!r.ok) throw new Error('Service unavailable ('+r.status+').');
                        return r.json(); })
-    .then(render)
-    .catch(function(e){ fail(e.message); });
+    .then(render).catch(function(e){ fail(e.message); });
 }
 </script>
 </body>
