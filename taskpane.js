@@ -52,10 +52,40 @@ function showMailButtons(show) {
   if (b) { b.hidden = !show; }
 }
 
-/* Opens the phone's mail app with the subject already filled in. */
+/* Opens Outlook with the subject already filled in.
+   ms-outlook:// targets the Outlook app directly, so it works even when the
+   phone's default mail app is something else (on iPhone that is Apple Mail
+   unless the user changed it, and company mail does not live there).
+   If Outlook is not installed nothing happens, so after a moment we fall
+   back to mailto: and let the phone pick. */
 function openInMail(subject) {
   if (!subject) { showToast("Pick a project first.", "err"); return; }
-  window.location.href = "mailto:?subject=" + encodeURIComponent(subject);
+
+  var enc = encodeURIComponent(subject);
+  var left = false;
+  function markLeft() { left = true; }
+
+  document.addEventListener("visibilitychange", markLeft);
+  window.addEventListener("pagehide", markLeft);
+
+  setTimeout(function () {
+    document.removeEventListener("visibilitychange", markLeft);
+    window.removeEventListener("pagehide", markLeft);
+    if (!left) { window.location.href = "mailto:?subject=" + enc; }
+  }, 1200);
+
+  navTo("ms-outlook://compose?subject=" + enc);
+}
+
+/* A synthetic link click survives iOS standalone mode, where assigning
+   location.href for a custom scheme is sometimes ignored. */
+function navTo(url) {
+  var a = document.createElement("a");
+  a.href = url;
+  a.style.display = "none";
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(function () { if (a.parentNode) { a.parentNode.removeChild(a); } }, 0);
 }
 
 if (typeof Office !== "undefined" && Office.onReady) {
