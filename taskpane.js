@@ -1,5 +1,6 @@
-/* Gekonny Subject Builder — v2.2
-   Works BOTH inside Outlook (Apply to subject) and as a plain web page (Copy subject).
+/* Gekonny Subject Builder — v3.0
+   Works inside Outlook (Apply to subject), as a web page, and as an
+   installed app on phone or desktop (Copy subject / Open in Mail).
 
    New item:        [Type] Address - description [CODE]
    Existing thread: [Type] Address - item name [CODE] {#itemId}
@@ -15,7 +16,6 @@ var TYPES = [["Drawing","01 Drawings"],["Specification","02 Specifications"],["S
 
 var state = { projects: [], selectedProject: null, newBidType: "GC", items: [], selectedItem: null, itemsKey: "" };
 
-/* true = running inside Outlook and able to write the subject */
 var IN_OUTLOOK = false;
 var booted = false;
 
@@ -29,15 +29,33 @@ function boot(inOutlook) {
   loadProjects();
 }
 
-/* The panel never waits for office.js: it boots as soon as the DOM is ready.
-   If Office later reports we are inside Outlook, the buttons switch from
-   "Copy subject" to "Apply to subject". */
 var officeIsOutlook = false;
 
 function markOutlook() {
   IN_OUTLOOK = true;
   setText("applyExisting", "Apply to subject");
   setText("applyNew", "Apply to subject");
+  showMailButtons(false);
+}
+
+/* Installed as an app: the service worker keeps the panel opening instantly
+   and working with no signal. Inside Outlook it is not registered. */
+if ("serviceWorker" in navigator && location.protocol === "https:") {
+  window.addEventListener("load", function () {
+    navigator.serviceWorker.register("sw.js").catch(function () {});
+  });
+}
+
+function showMailButtons(show) {
+  var a = byId("mailExisting"), b = byId("mailNew");
+  if (a) { a.hidden = !show; }
+  if (b) { b.hidden = !show; }
+}
+
+/* Opens the phone's mail app with the subject already filled in. */
+function openInMail(subject) {
+  if (!subject) { showToast("Pick a project first.", "err"); return; }
+  window.location.href = "mailto:?subject=" + encodeURIComponent(subject);
 }
 
 if (typeof Office !== "undefined" && Office.onReady) {
@@ -82,6 +100,8 @@ function initUI() {
   on("bidName", "input", renderNewPreview);
   on("applyNew", "click", applyNew);
   on("copyNew", "click", function () { copyText(buildNewSubject()); });
+  on("mailExisting", "click", function () { openInMail(buildExistingSubject()); });
+  on("mailNew", "click", function () { openInMail(buildNewSubject()); });
 
   var intake = byId("intakeAddr");
   if (intake) { intake.textContent = CONFIG.INTAKE_ADDRESS; }
@@ -89,6 +109,7 @@ function initUI() {
   if (!IN_OUTLOOK) {
     setText("applyExisting", "Copy subject");
     setText("applyNew", "Copy subject");
+    showMailButtons(true);
   }
 
   document.addEventListener("click", function (e) {
