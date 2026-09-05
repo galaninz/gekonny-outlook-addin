@@ -9,12 +9,14 @@
 var CONFIG = {
   PROJECTS_ENDPOINT: "https://defaultd8bc567963cc4849af903e6e3f8795.cc.environment.api.powerplatform.com/powerautomate/automations/direct/workflows/a267216360ff4b788436407b67580369/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=gX1bour4ERee8isgpJsthBwnI1Va3WLwcWB33tkjSB4",
   ITEMS_ENDPOINT: "https://defaultd8bc567963cc4849af903e6e3f8795.cc.environment.api.powerplatform.com/powerautomate/automations/direct/cu/19/workflows/23f3a10557784d41bde6b691334b3180/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=3uMez77ZGfTDxmWojlyyOErK1fyMM1Zo-9lqtzXmmSU",
-  INTAKE_ADDRESS: "build@gekonny.com"
+  INTAKE_ADDRESS: "build@gekonny.com",
+  MEETING_ENDPOINT: ""
 };
 
 var TYPES = [["Drawing","01 Drawings"],["Specification","02 Specifications"],["Submittal","03 Submittals"],["RFI","04 RFIs"],["Schedule","05 Schedule"],["Takeoff","06 Takeoff"],["Meeting Minutes","07 Meeting Minutes"],["Photo","08 Photos"],["Permit","09 Permits & Violations"],["Report","10 Reports & Punchlists"],["Insurance","11 Insurance"],["Agreement","12 Agreements & Contracts"],["Lien Waiver","13 Lien Waivers"],["CO","15 Change Orders"],["PO","16 Purchase Orders"],["Warranty","17 Warranty"],["Requisition","18 Requisitions"],["Team Doc","19 Team Documents"]];
 
-var state = { projects: [], selectedProject: null, newBidType: "GC", items: [], selectedItem: null, itemsKey: "" };
+var state = { projects: [], selectedProject: null, newBidType: "GC", items: [], selectedItem: null, itemsKey: "",
+              meetProject: null, meetRows: [] };
 
 var IN_OUTLOOK = false;
 var booted = false;
@@ -142,6 +144,17 @@ function initUI() {
   on("mailNew", "click", function () { openInOutlook(buildNewSubject()); });
   on("mailNewAny", "click", function () { openInMail(buildNewSubject()); });
 
+  on("tabMeeting", "click", function () { switchTab("meeting"); });
+  on("meetProjectSearch", "input", onMeetProjectSearch);
+  on("meetProjectSearch", "focus", onMeetProjectSearch);
+  on("meetProjectClear", "click", clearMeetProject);
+  on("meetAdd", "click", addMeetRow);
+  on("meetSend", "click", sendMeetRows);
+  on("meetDesc", "keydown", function (e) { if (e.key === "Enter") { addMeetRow(); } });
+  fillMeetTypes();
+  restoreMeetFrom();
+  renderMeetList();
+
   var intake = byId("intakeAddr");
   if (intake) { intake.textContent = CONFIG.INTAKE_ADDRESS; }
 
@@ -163,11 +176,13 @@ function initUI() {
 }
 
 function switchTab(which) {
-  var ex = which === "existing";
-  byId("tabExisting").classList.toggle("tab-active", ex);
-  byId("tabNew").classList.toggle("tab-active", !ex);
-  byId("panelExisting").hidden = !ex;
-  byId("panelNew").hidden = ex;
+  var tabs = { existing: "Existing", "new": "New", meeting: "Meeting" };
+  Object.keys(tabs).forEach(function (key) {
+    var on = key === which;
+    var t = byId("tab" + tabs[key]), p = byId("panel" + tabs[key]);
+    if (t) { t.classList.toggle("tab-active", on); }
+    if (p) { p.hidden = !on; }
+  });
 }
 
 function setMode(m) {
@@ -440,4 +455,210 @@ function showToast(msg, kind) {
   t.hidden = false;
   if (toastTimer) { clearTimeout(toastTimer); }
   toastTimer = setTimeout(function () { t.hidden = true; }, 3600);
+}
+
+/* ---------- meeting minutes ------------------------------------------
+
+   One row per task. Each row becomes its own email with a correctly
+   formatted subject, so the existing mail intake files it and creates the
+   Monday item — nothing new has to duplicate that logic. Rows can point at
+   different projects, which is the point for an office meeting covering
+   several jobs.
+   --------------------------------------------------------------------- */
+
+function fillMeetTypes() {
+  var sel = byId("meetType");
+  if (!sel || sel.options.length) { return; }
+  TYPES.forEach(function (t) {
+    var o = document.createElement("option");
+    o.value = t[0];
+    o.textContent = t[1];
+    if (t[0] === "RFI") { o.selected = true; }
+    sel.appendChild(o);
+  });
+}
+
+function restoreMeetFrom() {
+  var el = byId("meetFrom");
+  if (!el) { return; }
+  var mine = "";
+  try {
+    if (IN_OUTLOOK && Office.context.mailbox.userProfile) {
+      mine = Office.context.mailbox.userProfile.emailAddress || "";
+    }
+  } catch (e) { mine = ""; }
+  if (!mine) { try { mine = localStorage.getItem("gk_meet_from") || ""; } catch (e) {} }
+  el.value = mine;
+  el.addEventListener("change", function () {
+    try { localStorage.setItem("gk_meet_from", el.value.trim()); } catch (e) {}
+  });
+}
+
+function onMeetProjectSearch() {
+  var q = byId("meetProjectSearch").value.trim().toLowerCase();
+  var listEl = byId("meetProjectList");
+  listEl.innerHTML = "";
+  var matches = state.projects.filter(function (p) {
+    return (p.code || "").toLowerCase().indexOf(q) > -1 || (p.name || "").toLowerCase().indexOf(q) > -1;
+  }).slice(0, 30);
+  if (!matches.length) {
+    listEl.innerHTML = '<div class="project-item"><div class="empty">No match.</div></div>';
+  } else {
+    matches.forEach(function (p) {
+      var row = document.createElement("div");
+      row.className = "project-item";
+      row.innerHTML = '<div style="font-weight:600">' + esc(p.name || p.code) + '</div><div style="opacity:.7;font-size:12px">' + esc(p.code) + '</div>';
+      row.addEventListener("click", function () { selectMeetProject(p); });
+      listEl.appendChild(row);
+    });
+  }
+  listEl.hidden = false;
+}
+
+function selectMeetProject(p) {
+  state.meetProject = p;
+  byId("meetProjectSearch").value = "";
+  byId("meetProjectSearch").hidden = true;
+  byId("meetProjectList").hidden = true;
+  byId("meetProjectChosenText").textContent = (p.name || p.code) + " — " + p.code;
+  byId("meetProjectChosen").hidden = false;
+  var d = byId("meetDesc");
+  if (d) { d.focus(); }
+}
+
+function clearMeetProject() {
+  state.meetProject = null;
+  byId("meetProjectChosen").hidden = true;
+  byId("meetProjectSearch").hidden = false;
+  byId("meetProjectSearch").value = "";
+  byId("meetProjectSearch").focus();
+}
+
+function addMeetRow() {
+  var p = state.meetProject;
+  if (!p) { showToast("Pick a project for this task.", "err"); return; }
+
+  var desc = byId("meetDesc").value.trim();
+  if (!desc) { showToast("Describe the task.", "err"); return; }
+
+  var to = byId("meetTo").value.trim();
+  var bad = badEmails(to);
+  if (!to) { showToast("Who should receive it?", "err"); return; }
+  if (bad) { showToast("Check this address: " + bad, "err"); return; }
+
+  var type = byId("meetType").value;
+  state.meetRows.push({
+    projectId: p.id || "",
+    projectName: p.name || p.code,
+    code: p.code,
+    type: type,
+    description: desc,
+    to: to,
+    subject: "[" + type + "] " + (p.name || p.code) + " - " + desc + " [" + p.code + "]"
+  });
+
+  byId("meetDesc").value = "";
+  renderMeetList();
+  byId("meetDesc").focus();
+}
+
+/* Returns the first address that does not look like an address, or "". */
+function badEmails(list) {
+  var parts = list.split(/[,;]/);
+  for (var i = 0; i < parts.length; i++) {
+    var a = parts[i].trim();
+    if (!a) { continue; }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(a)) { return a; }
+  }
+  return "";
+}
+
+function removeMeetRow(i) {
+  state.meetRows.splice(i, 1);
+  renderMeetList();
+}
+
+function renderMeetList() {
+  var box = byId("meetList");
+  if (!box) { return; }
+  box.innerHTML = "";
+
+  var n = state.meetRows.length;
+  setText("meetCount", n ? "(" + n + ")" : "");
+  var btn = byId("meetSend");
+  if (btn) {
+    btn.disabled = !n;
+    btn.textContent = n ? "Send all (" + n + ")" : "Send all";
+  }
+
+  if (!n) {
+    box.innerHTML = '<div class="meet-empty">No tasks yet. Add them one by one above.</div>';
+    return;
+  }
+
+  state.meetRows.forEach(function (r, i) {
+    var row = document.createElement("div");
+    row.className = "meet-row";
+
+    var main = document.createElement("div");
+    main.className = "meet-main";
+    main.innerHTML = '<div class="meet-subject">' + esc(r.subject) + '</div>' +
+                     '<div class="meet-to">→ ' + esc(r.to) + '</div>';
+
+    var del = document.createElement("button");
+    del.className = "meet-del";
+    del.type = "button";
+    del.title = "Remove";
+    del.innerHTML = "&times;";
+    del.addEventListener("click", function () { removeMeetRow(i); });
+
+    row.appendChild(main);
+    row.appendChild(del);
+    box.appendChild(row);
+  });
+}
+
+function sendMeetRows() {
+  if (!state.meetRows.length) { return; }
+
+  if (!CONFIG.MEETING_ENDPOINT) {
+    showToast("Sending is not wired up yet.", "err");
+    setStatus("meetStatus", "The flow that sends these emails has not been connected yet.", true);
+    return;
+  }
+
+  var from = (byId("meetFrom").value || "").trim();
+  if (!from || badEmails(from)) { showToast("Enter your own email first.", "err"); return; }
+
+  var btn = byId("meetSend");
+  btn.disabled = true;
+  btn.textContent = "Sending…";
+  setStatus("meetStatus", "", false);
+
+  var payload = {
+    meeting: {
+      title: (byId("meetTitle").value || "").trim(),
+      date: new Date().toISOString().slice(0, 10),
+      owner: from
+    },
+    rows: state.meetRows
+  };
+
+  fetch(CONFIG.MEETING_ENDPOINT, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload)
+  }).then(function (res) {
+    if (!res.ok) { throw new Error("HTTP " + res.status); }
+    var sent = state.meetRows.length;
+    state.meetRows = [];
+    renderMeetList();
+    showToast(sent + " emails sent ✓", "ok");
+    setStatus("meetStatus", "Sent " + sent + ". They will show up in Monday once the intake picks them up.", false);
+  }).catch(function (e) {
+    btn.disabled = false;
+    btn.textContent = "Send all (" + state.meetRows.length + ")";
+    showToast("Could not send: " + e.message, "err");
+    setStatus("meetStatus", "Nothing was sent. The list is still here — try again.", true);
+  });
 }

@@ -28,6 +28,7 @@
   <div class="tabs" role="tablist">
     <button class="tab tab-active" id="tabExisting" role="tab">Existing project</button>
     <button class="tab" id="tabNew" role="tab">New bid</button>
+    <button class="tab" id="tabMeeting" role="tab">Meeting</button>
   </div>
 
   <section class="panel" id="panelExisting">
@@ -140,6 +141,52 @@
     <div class="note" style="margin-top:14px">
       <strong>Reminder:</strong> after applying, forward this email to
       <code id="intakeAddr">build@gekonny.com</code> so the bid gets registered in Monday.
+    </div>
+  </section>
+
+
+  <section class="panel" id="panelMeeting" hidden>
+
+    <div class="card">
+      <label class="field-label" for="meetTitle">Meeting</label>
+      <input type="text" id="meetTitle" class="input" placeholder="e.g. Owner walkthrough, 6 Greene"/>
+
+      <label class="field-label" for="meetFrom">Your email &middot; replies come back here</label>
+      <input type="email" id="meetFrom" class="input" placeholder="you@gekonny.com" autocomplete="email"/>
+    </div>
+
+    <div class="card">
+      <label class="field-label" for="meetProjectSearch">Project</label>
+      <input type="text" id="meetProjectSearch" class="input" placeholder="Search by address or code&hellip;" autocomplete="off"/>
+      <div id="meetProjectList" class="project-list" hidden></div>
+      <div id="meetProjectChosen" class="chosen" hidden>
+        <span id="meetProjectChosenText"></span>
+        <button id="meetProjectClear" class="chosen-clear" title="Change project">&times;</button>
+      </div>
+
+      <label class="field-label" for="meetType">Type &middot; folder</label>
+      <select id="meetType" class="input"></select>
+
+      <label class="field-label" for="meetDesc">Task</label>
+      <input type="text" id="meetDesc" class="input" placeholder="e.g. Confirm sprinkler head count"/>
+
+      <label class="field-label" for="meetTo">Send to</label>
+      <input type="text" id="meetTo" class="input" placeholder="sub@example.com, architect@example.com"/>
+
+      <button id="meetAdd" class="btn-secondary">Add to list</button>
+    </div>
+
+    <div class="card">
+      <label class="field-label">List <span id="meetCount"></span></label>
+      <div id="meetList" class="meet-list"></div>
+    </div>
+
+    <button id="meetSend" class="btn-primary">Send all</button>
+    <div id="meetStatus" class="hint"></div>
+
+    <div class="note" style="margin-top:14px">
+      One email per task, each with its own subject. Different projects in the
+      same list are fine &mdash; that is what an office meeting looks like.
     </div>
   </section>
 
