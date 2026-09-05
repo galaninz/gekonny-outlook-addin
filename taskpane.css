@@ -61,20 +61,10 @@ html, body {
 .header-mark {
   flex: 0 0 auto;
   width: 40px; height: 40px;
+  display: block;
   border-radius: 11px;
-  background: rgba(255, 255, 255, .13);
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .16);
-  display: flex; align-items: center; justify-content: center;
-  gap: 3px;
-  font-size: 17px; font-weight: 700; letter-spacing: .5px;
-  color: #fff;
-}
-.header-mark .dot {
-  width: 8px; height: 8px;
-  border-radius: 50%;
-  background: var(--sky);
-  display: inline-block;
-  box-shadow: 0 0 8px rgba(56, 189, 248, .85);
+  object-fit: contain;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, .28), inset 0 0 0 1px rgba(255, 255, 255, .16);
 }
 
 .header-title { font-size: 16px; font-weight: 650; letter-spacing: -.1px; }
