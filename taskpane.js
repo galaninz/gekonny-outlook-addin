@@ -47,34 +47,41 @@ if ("serviceWorker" in navigator && location.protocol === "https:") {
 }
 
 function showMailButtons(show) {
-  var a = byId("mailExisting"), b = byId("mailNew");
+  var a = byId("mailRowExisting"), b = byId("mailRowNew");
   if (a) { a.hidden = !show; }
   if (b) { b.hidden = !show; }
 }
 
-/* Opens Outlook with the subject already filled in.
-   ms-outlook:// targets the Outlook app directly, so it works even when the
-   phone's default mail app is something else (on iPhone that is Apple Mail
-   unless the user changed it, and company mail does not live there).
-   If Outlook is not installed nothing happens, so after a moment we fall
-   back to mailto: and let the phone pick. */
-function openInMail(subject) {
+/* Two deliberate choices, because the platforms differ.
+
+   "Open in Outlook" uses Outlook's own ms-outlook:// scheme, so it lands in
+   Outlook regardless of which mail app the phone treats as default. That
+   matters on iPhone, where mailto: silently goes to Apple Mail and company
+   mail is not set up there.
+
+   "Other mail app" is a plain mailto:, so the phone decides — on Android
+   that means the usual app chooser. */
+
+function openInOutlook(subject) {
   if (!subject) { showToast("Pick a project first.", "err"); return; }
 
-  var enc = encodeURIComponent(subject);
   var left = false;
   function markLeft() { left = true; }
-
   document.addEventListener("visibilitychange", markLeft);
   window.addEventListener("pagehide", markLeft);
 
   setTimeout(function () {
     document.removeEventListener("visibilitychange", markLeft);
     window.removeEventListener("pagehide", markLeft);
-    if (!left) { window.location.href = "mailto:?subject=" + enc; }
+    if (!left) { showToast("Outlook did not open. Try Other mail app.", "err"); }
   }, 1200);
 
-  navTo("ms-outlook://compose?subject=" + enc);
+  navTo("ms-outlook://compose?subject=" + encodeURIComponent(subject));
+}
+
+function openInMail(subject) {
+  if (!subject) { showToast("Pick a project first.", "err"); return; }
+  window.location.href = "mailto:?subject=" + encodeURIComponent(subject);
 }
 
 /* A synthetic link click survives iOS standalone mode, where assigning
@@ -130,8 +137,10 @@ function initUI() {
   on("bidName", "input", renderNewPreview);
   on("applyNew", "click", applyNew);
   on("copyNew", "click", function () { copyText(buildNewSubject()); });
-  on("mailExisting", "click", function () { openInMail(buildExistingSubject()); });
-  on("mailNew", "click", function () { openInMail(buildNewSubject()); });
+  on("mailExisting", "click", function () { openInOutlook(buildExistingSubject()); });
+  on("mailExistingAny", "click", function () { openInMail(buildExistingSubject()); });
+  on("mailNew", "click", function () { openInOutlook(buildNewSubject()); });
+  on("mailNewAny", "click", function () { openInMail(buildNewSubject()); });
 
   var intake = byId("intakeAddr");
   if (intake) { intake.textContent = CONFIG.INTAKE_ADDRESS; }

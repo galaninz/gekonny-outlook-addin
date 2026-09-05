@@ -341,6 +341,9 @@ select.input {
 }
 .btn-secondary:hover { background: var(--tint); }
 
+.mail-row { display: flex; gap: 8px; }
+.mail-row .btn-secondary { flex: 1; min-width: 0; }
+
 /* ===== Info card ===== */
 
 .note {
