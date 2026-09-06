@@ -3,7 +3,7 @@
    Cache is only a fallback for offline. Requests to Power Automate are
    never touched. */
 
-var CACHE = "gekonny-sb-v1";
+var CACHE = "gekonny-sb-v2";
 var SHELL = [
   "./taskpane.html",
   "./taskpane.css",
@@ -36,8 +36,17 @@ self.addEventListener("fetch", function (e) {
   try { url = new URL(req.url); } catch (err) { return; }
   if (url.origin !== self.location.origin) { return; }
 
+  /* Network-first is not enough on its own: a plain fetch() may still be
+     answered from the browser's own HTTP cache, and the host serves these
+     files with a ten-minute max-age. That is how a published fix can sit
+     on the server while the panel keeps running yesterday's code. Forcing
+     revalidation makes the request conditional — a 304 when nothing
+     changed, so the cost is one round trip, and never a stale script. */
+  var fresh;
+  try { fresh = new Request(req, { cache: "no-cache" }); } catch (err2) { fresh = req; }
+
   e.respondWith(
-    fetch(req).then(function (res) {
+    fetch(fresh).then(function (res) {
       var copy = res.clone();
       caches.open(CACHE).then(function (c) { c.put(req, copy); }).catch(function () {});
       return res;

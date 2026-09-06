@@ -19,7 +19,35 @@ function subjectLooksTagged(subject) {
   return RE_CODE.test(cleaned) && RE_LEAD.test(cleaned);
 }
 
+/* People who should never see the send-time prompt.
+
+   The add-in itself stays for them — panel, ribbon button, everything.
+   Only the interruption is dropped, because for someone who does not file
+   work through Monday the prompt is pure noise on every unrelated email.
+   Removing the whole add-in from their mailbox would work too, but it
+   takes away a tool to silence a nag.
+
+   Addresses, lower case, one per line. */
+var ALERT_EXEMPT = [
+];
+
+function alertIsExemptForMe() {
+  try {
+    var me = (Office.context.mailbox.userProfile.emailAddress || "").toLowerCase();
+    if (!me) { return false; }
+    for (var i = 0; i < ALERT_EXEMPT.length; i++) {
+      if (String(ALERT_EXEMPT[i]).toLowerCase() === me) { return true; }
+    }
+  } catch (e) { /* no profile — treat as not exempt */ }
+  return false;
+}
+
 function onMessageSendHandler(event) {
+  if (alertIsExemptForMe()) {
+    event.completed({ allowEvent: true });
+    return;
+  }
+
   var item = Office.context.mailbox.item;
 
   item.subject.getAsync(function (result) {
