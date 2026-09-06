@@ -26,12 +26,17 @@
   </header>
 
   <div class="tabs" role="tablist">
-    <button class="tab tab-active" id="tabExisting" role="tab">Existing project</button>
-    <button class="tab" id="tabNew" role="tab">New bid</button>
+    <button class="tab tab-active" id="tabExisting" role="tab">Subject</button>
     <button class="tab" id="tabMeeting" role="tab">Queue</button>
   </div>
 
   <section class="panel" id="panelExisting">
+
+    <div class="card" id="fromQueueCard" hidden>
+      <label class="field-label" for="fromQueue">From queue <span id="fromQueueCount"></span></label>
+      <select id="fromQueue" class="input"></select>
+      <button id="fromQueueDone" class="btn-secondary" type="button" hidden>Cross off &mdash; it is sent</button>
+    </div>
 
     <div class="card">
       <label class="field-label" for="projectSearch">Project</label>
@@ -110,40 +115,6 @@
       <button id="mailExistingAny" class="btn-secondary">Other mail app</button>
     </div>
   </section>
-
-  <section class="panel" id="panelNew" hidden>
-
-    <div class="card">
-      <label class="field-label">Bid type</label>
-      <div class="segmented">
-        <button class="seg seg-active" id="segGC" data-type="GC">GC</button>
-        <button class="seg" id="segSUB" data-type="SUB">SUB</button>
-      </div>
-
-      <label class="field-label" for="bidName">Project name / address</label>
-      <input type="text" id="bidName" class="input" placeholder="e.g. 215 West 17th St"/>
-    </div>
-
-    <div class="preview-box">
-      <div class="preview-head">
-        <span class="preview-label">Subject preview</span>
-        <button id="copyNew" class="btn-link" type="button">Copy</button>
-      </div>
-      <div id="previewNew" class="preview-text">&mdash;</div>
-    </div>
-
-    <button id="applyNew" class="btn-primary">Apply to subject</button>
-    <div class="mail-row" id="mailRowNew" hidden>
-      <button id="mailNew" class="btn-secondary">Open in Outlook</button>
-      <button id="mailNewAny" class="btn-secondary">Other mail app</button>
-    </div>
-
-    <div class="note" style="margin-top:14px">
-      <strong>Reminder:</strong> after applying, forward this email to
-      <code id="intakeAddr">build@gekonny.com</code> so the bid gets registered in Monday.
-    </div>
-  </section>
-
 
   <section class="panel" id="panelMeeting" hidden>
 

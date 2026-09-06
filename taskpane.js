@@ -8,14 +8,13 @@
 
 var CONFIG = {
   PROJECTS_ENDPOINT: "https://defaultd8bc567963cc4849af903e6e3f8795.cc.environment.api.powerplatform.com/powerautomate/automations/direct/workflows/a267216360ff4b788436407b67580369/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=gX1bour4ERee8isgpJsthBwnI1Va3WLwcWB33tkjSB4",
-  ITEMS_ENDPOINT: "https://defaultd8bc567963cc4849af903e6e3f8795.cc.environment.api.powerplatform.com/powerautomate/automations/direct/cu/19/workflows/23f3a10557784d41bde6b691334b3180/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=3uMez77ZGfTDxmWojlyyOErK1fyMM1Zo-9lqtzXmmSU",
-  INTAKE_ADDRESS: "build@gekonny.com"
+  ITEMS_ENDPOINT: "https://defaultd8bc567963cc4849af903e6e3f8795.cc.environment.api.powerplatform.com/powerautomate/automations/direct/cu/19/workflows/23f3a10557784d41bde6b691334b3180/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=3uMez77ZGfTDxmWojlyyOErK1fyMM1Zo-9lqtzXmmSU"
 };
 
 var TYPES = [["Drawing","01 Drawings"],["Specification","02 Specifications"],["Submittal","03 Submittals"],["RFI","04 RFIs"],["Schedule","05 Schedule"],["Takeoff","06 Takeoff"],["Meeting Minutes","07 Meeting Minutes"],["Photo","08 Photos"],["Permit","09 Permits & Violations"],["Report","10 Reports & Punchlists"],["Insurance","11 Insurance"],["Agreement","12 Agreements & Contracts"],["Lien Waiver","13 Lien Waivers"],["CO","15 Change Orders"],["PO","16 Purchase Orders"],["Warranty","17 Warranty"],["Requisition","18 Requisitions"],["Team Doc","19 Team Documents"]];
 
-var state = { projects: [], selectedProject: null, newBidType: "GC", items: [], selectedItem: null, itemsKey: "",
-              meetProject: null, queue: [], archive: [] };
+var state = { projects: [], selectedProject: null, items: [], selectedItem: null, itemsKey: "",
+              meetProject: null, queue: [], archive: [], loadedFromQueue: null };
 
 var IN_OUTLOOK = false;
 var booted = false;
@@ -35,7 +34,6 @@ var officeIsOutlook = false;
 function markOutlook() {
   IN_OUTLOOK = true;
   setText("applyExisting", "Apply to subject");
-  setText("applyNew", "Apply to subject");
   showMailButtons(false);
 }
 
@@ -48,9 +46,8 @@ if ("serviceWorker" in navigator && location.protocol === "https:") {
 }
 
 function showMailButtons(show) {
-  var a = byId("mailRowExisting"), b = byId("mailRowNew");
+  var a = byId("mailRowExisting");
   if (a) { a.hidden = !show; }
-  if (b) { b.hidden = !show; }
 }
 
 /* Two deliberate choices, because the platforms differ.
@@ -123,7 +120,8 @@ function on(id, evt, fn) {
 
 function initUI() {
   on("tabExisting", "click", function () { switchTab("existing"); });
-  on("tabNew", "click", function () { switchTab("new"); });
+  on("fromQueue", "change", onFromQueuePick);
+  on("fromQueueDone", "click", crossOffLoaded);
   on("projectSearch", "input", onProjectSearch);
   on("projectSearch", "focus", onProjectSearch);
   on("projectClear", "click", clearProject);
@@ -136,15 +134,8 @@ function initUI() {
   on("modeThread", "click", function () { setMode("thread"); });
   on("itemSearch", "input", renderItemList);
   on("itemReload", "click", function () { loadItems(true); });
-  on("segGC", "click", function () { setBidType("GC"); });
-  on("segSUB", "click", function () { setBidType("SUB"); });
-  on("bidName", "input", renderNewPreview);
-  on("applyNew", "click", applyNew);
-  on("copyNew", "click", function () { copyText(buildNewSubject()); });
-  on("mailExisting", "click", function () { openInOutlook(buildExistingSubject()); });
-  on("mailExistingAny", "click", function () { openInMail(buildExistingSubject()); });
-  on("mailNew", "click", function () { openInOutlook(buildNewSubject()); });
-  on("mailNewAny", "click", function () { openInMail(buildNewSubject()); });
+  on("mailExisting", "click", function () { openInOutlook(buildExistingSubject(), loadedRecipient()); });
+  on("mailExistingAny", "click", function () { openInMail(buildExistingSubject(), loadedRecipient()); });
 
   on("tabMeeting", "click", function () { switchTab("meeting"); });
   on("meetProjectSearch", "input", onMeetProjectSearch);
@@ -158,12 +149,8 @@ function initUI() {
   loadQueue();
   renderQueue();
 
-  var intake = byId("intakeAddr");
-  if (intake) { intake.textContent = CONFIG.INTAKE_ADDRESS; }
-
   if (!IN_OUTLOOK) {
     setText("applyExisting", "Copy subject");
-    setText("applyNew", "Copy subject");
     showMailButtons(true);
   }
 
@@ -175,11 +162,10 @@ function initUI() {
   });
 
   renderExistingPreview();
-  renderNewPreview();
 }
 
 function switchTab(which) {
-  var tabs = { existing: "Existing", "new": "New", meeting: "Meeting" };
+  var tabs = { existing: "Existing", meeting: "Meeting" };
   Object.keys(tabs).forEach(function (key) {
     var on = key === which;
     var t = byId("tab" + tabs[key]), p = byId("panel" + tabs[key]);
@@ -373,23 +359,15 @@ function renderExistingPreview() {
   byId("applyExisting").disabled = !s;
   var c = byId("copyExisting");
   if (c) { c.disabled = !s; }
-}
 
-function buildNewSubject() {
-  var name = byId("bidName").value.trim();
-  return "[RFP " + state.newBidType + "]" + (name ? " " + name : "");
-}
-function renderNewPreview() { byId("previewNew").textContent = buildNewSubject(); }
-
-function setBidType(t) {
-  state.newBidType = t;
-  byId("segGC").classList.toggle("seg-active", t === "GC");
-  byId("segSUB").classList.toggle("seg-active", t === "SUB");
-  renderNewPreview();
+  /* The moment the form stops matching the task that was loaded, the link is
+     stale — drop it, so "Cross off" can never strike the wrong row. */
+  if (state.loadedFromQueue && s !== state.loadedFromQueue.subject) {
+    unloadFromQueue();
+  }
 }
 
 function applyExisting() { var s = buildExistingSubject(); if (s) { setSubject(s); } }
-function applyNew() { setSubject(buildNewSubject()); }
 
 function setSubject(subject) {
   if (!IN_OUTLOOK || !Office.context.mailbox.item || !Office.context.mailbox.item.subject) {
@@ -748,6 +726,88 @@ function renderQueue() {
   }
 
   renderBacklog();
+  renderFromQueue();
+}
+
+/* ---------- picking a queued task on the Subject tab -------------------
+
+   The queue is where tasks are collected; the Subject tab is where one is
+   turned into an email. Picking here fills the normal form rather than
+   bypassing it, so the preview, Apply and the mail buttons all keep
+   working exactly as they do for anything typed by hand.
+   --------------------------------------------------------------------- */
+
+function renderFromQueue() {
+  var card = byId("fromQueueCard"), sel = byId("fromQueue");
+  if (!card || !sel) { return; }
+
+  var n = state.queue.length;
+  card.hidden = !n;
+  setText("fromQueueCount", n ? "(" + n + ")" : "");
+  if (!n) { unloadFromQueue(); return; }
+
+  var keep = state.loadedFromQueue ? state.loadedFromQueue.id : "";
+  sel.innerHTML = "";
+  var none = document.createElement("option");
+  none.value = "";
+  none.textContent = "— pick a task —";
+  sel.appendChild(none);
+
+  state.queue.forEach(function (row) {
+    var o = document.createElement("option");
+    o.value = row.id;
+    o.textContent = row.code + " · " + row.type + " · " + row.description;
+    sel.appendChild(o);
+  });
+  sel.value = keep;
+  if (sel.value !== keep) { unloadFromQueue(); }
+}
+
+function onFromQueuePick() {
+  var id = byId("fromQueue").value;
+  if (!id) { unloadFromQueue(); return; }
+
+  var i = qFind(id);
+  if (i < 0) { unloadFromQueue(); renderFromQueue(); return; }
+  var row = state.queue[i];
+
+  /* Prefer the real project record — it carries the id the item lookup
+     needs. Fall back to what the row itself remembers. */
+  var p = null;
+  for (var k = 0; k < state.projects.length; k++) {
+    if (state.projects[k].code === row.code) { p = state.projects[k]; break; }
+  }
+  if (!p) { p = { name: row.projectName, code: row.code }; }
+
+  setMode("new");
+  selectProject(p);
+  byId("typeSelect").value = row.type;
+  byId("descInput").value = row.description;
+
+  state.loadedFromQueue = row;
+  renderExistingPreview();
+
+  var done = byId("fromQueueDone");
+  if (done) { done.hidden = false; }
+  byId("fromQueue").value = row.id;
+}
+
+function unloadFromQueue() {
+  state.loadedFromQueue = null;
+  var done = byId("fromQueueDone"), sel = byId("fromQueue");
+  if (done) { done.hidden = true; }
+  if (sel && sel.value) { sel.value = ""; }
+}
+
+function loadedRecipient() {
+  return state.loadedFromQueue ? state.loadedFromQueue.to : "";
+}
+
+function crossOffLoaded() {
+  if (!state.loadedFromQueue) { return; }
+  var id = state.loadedFromQueue.id;
+  unloadFromQueue();
+  queueArchive(id, "sent");
 }
 
 function renderBacklog() {
