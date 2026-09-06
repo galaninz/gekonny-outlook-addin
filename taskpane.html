@@ -28,7 +28,7 @@
   <div class="tabs" role="tablist">
     <button class="tab tab-active" id="tabExisting" role="tab">Existing project</button>
     <button class="tab" id="tabNew" role="tab">New bid</button>
-    <button class="tab" id="tabMeeting" role="tab">Meeting</button>
+    <button class="tab" id="tabMeeting" role="tab">Queue</button>
   </div>
 
   <section class="panel" id="panelExisting">
@@ -148,14 +148,6 @@
   <section class="panel" id="panelMeeting" hidden>
 
     <div class="card">
-      <label class="field-label" for="meetTitle">Meeting</label>
-      <input type="text" id="meetTitle" class="input" placeholder="e.g. Owner walkthrough, 6 Greene"/>
-
-      <label class="field-label" for="meetFrom">Your email &middot; replies come back here</label>
-      <input type="email" id="meetFrom" class="input" placeholder="you@gekonny.com" autocomplete="email"/>
-    </div>
-
-    <div class="card">
       <label class="field-label" for="meetProjectSearch">Project</label>
       <input type="text" id="meetProjectSearch" class="input" placeholder="Search by address or code&hellip;" autocomplete="off"/>
       <div id="meetProjectList" class="project-list" hidden></div>
@@ -170,23 +162,32 @@
       <label class="field-label" for="meetDesc">Task</label>
       <input type="text" id="meetDesc" class="input" placeholder="e.g. Confirm sprinkler head count"/>
 
-      <label class="field-label" for="meetTo">Send to</label>
-      <input type="text" id="meetTo" class="input" placeholder="sub@example.com, architect@example.com"/>
+      <label class="field-label" for="meetTo">Send to <span class="opt">optional</span></label>
+      <input type="text" id="meetTo" class="input" placeholder="sub@example.com"/>
 
-      <button id="meetAdd" class="btn-secondary">Add to list</button>
+      <button id="meetAdd" class="btn-secondary">Add to queue</button>
     </div>
 
     <div class="card">
-      <label class="field-label">List <span id="meetCount"></span></label>
+      <label class="field-label">Queue <span id="meetCount"></span></label>
       <div id="meetList" class="meet-list"></div>
     </div>
 
-    <button id="meetSend" class="btn-primary">Send all</button>
+    <div class="card" id="backlogCard" hidden>
+      <button class="q-disclosure" id="backlogToggle" type="button">
+        <span id="backlogLabel">Backlog</span>
+        <span class="q-chev" id="backlogChev">&#9662;</span>
+      </button>
+      <div id="backlogList" class="meet-list" hidden></div>
+      <div class="hint" id="backlogHint" hidden>Kept 30 days, then dropped.</div>
+    </div>
+
     <div id="meetStatus" class="hint"></div>
 
     <div class="note" style="margin-top:14px">
-      One email per task, each with its own subject. Different projects in the
-      same list are fine &mdash; that is what an office meeting looks like.
+      The queue lives on this device only, and nothing is sent from here.
+      Press <b>Open</b> and the email opens with the subject already set
+      &mdash; you send it yourself.
     </div>
   </section>
 

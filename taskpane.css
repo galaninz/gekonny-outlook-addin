@@ -344,19 +344,16 @@ select.input {
 .mail-row { display: flex; gap: 8px; }
 .mail-row .btn-secondary { flex: 1; min-width: 0; }
 
-/* ===== Meeting list ===== */
+/* ===== Queue ===== */
 
 .meet-list { display: flex; flex-direction: column; gap: 8px; }
 .meet-row {
-  display: flex;
-  align-items: flex-start;
-  gap: 8px;
   padding: 10px 11px;
   background: var(--field);
   border: 1px solid var(--line);
   border-radius: var(--r-sm);
 }
-.meet-main { flex: 1; min-width: 0; }
+.meet-main { min-width: 0; }
 .meet-subject {
   font-family: "SF Mono", "Cascadia Mono", Consolas, "Courier New", monospace;
   font-size: 11.5px;
@@ -365,14 +362,70 @@ select.input {
   word-break: break-word;
 }
 .meet-to { font-size: 11px; color: var(--muted); margin-top: 3px; word-break: break-all; }
-.meet-del {
-  flex: 0 0 auto;
-  background: none; border: none;
-  font-size: 17px; line-height: 1;
-  color: #7d93b0; cursor: pointer; padding: 0 2px;
-}
-.meet-del:hover { color: var(--err); }
 .meet-empty { font-size: 12px; color: var(--muted); font-style: italic; }
+
+/* Project heading inside the queue — an office meeting covers several jobs. */
+.q-group {
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: .05em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin: 6px 0 -2px;
+}
+.q-group:first-child { margin-top: 0; }
+
+.q-actions { display: flex; gap: 6px; margin-top: 9px; }
+.q-btn {
+  flex: 1 1 auto;
+  min-width: 0;
+  height: 30px;
+  background: #fff;
+  color: var(--blue-600);
+  border: 1px solid var(--tint-line);
+  border-radius: var(--r-sm);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 650;
+  cursor: pointer;
+  transition: background .15s, color .15s;
+}
+.q-btn:hover { background: var(--tint); }
+.q-btn-done { flex: 0 0 auto; padding: 0 12px; }
+.q-btn-done:hover { background: #e8f5ec; color: #1c7a43; }
+.q-btn-drop { flex: 0 0 auto; padding: 0 11px; color: #7d93b0; }
+.q-btn-drop:hover { background: #fdecec; color: var(--err); }
+
+/* Archived rows read as finished business, not as work. */
+.q-archived .meet-subject { text-decoration: line-through; opacity: .55; }
+.q-stamp { font-size: 10.5px; color: var(--muted); margin-top: 4px; }
+
+.q-disclosure {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 0;
+  background: none;
+  border: none;
+  font: inherit;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  color: var(--muted);
+  cursor: pointer;
+}
+.q-chev { transition: transform .15s; font-size: 10px; }
+.q-chev.open { transform: rotate(180deg); }
+.q-disclosure + .meet-list { margin-top: 10px; }
+
+.opt {
+  font-weight: 500;
+  text-transform: none;
+  letter-spacing: 0;
+  opacity: .6;
+}
 
 /* ===== Info card ===== */
 

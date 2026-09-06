@@ -9,14 +9,13 @@
 var CONFIG = {
   PROJECTS_ENDPOINT: "https://defaultd8bc567963cc4849af903e6e3f8795.cc.environment.api.powerplatform.com/powerautomate/automations/direct/workflows/a267216360ff4b788436407b67580369/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=gX1bour4ERee8isgpJsthBwnI1Va3WLwcWB33tkjSB4",
   ITEMS_ENDPOINT: "https://defaultd8bc567963cc4849af903e6e3f8795.cc.environment.api.powerplatform.com/powerautomate/automations/direct/cu/19/workflows/23f3a10557784d41bde6b691334b3180/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=3uMez77ZGfTDxmWojlyyOErK1fyMM1Zo-9lqtzXmmSU",
-  INTAKE_ADDRESS: "build@gekonny.com",
-  MEETING_ENDPOINT: ""
+  INTAKE_ADDRESS: "build@gekonny.com"
 };
 
 var TYPES = [["Drawing","01 Drawings"],["Specification","02 Specifications"],["Submittal","03 Submittals"],["RFI","04 RFIs"],["Schedule","05 Schedule"],["Takeoff","06 Takeoff"],["Meeting Minutes","07 Meeting Minutes"],["Photo","08 Photos"],["Permit","09 Permits & Violations"],["Report","10 Reports & Punchlists"],["Insurance","11 Insurance"],["Agreement","12 Agreements & Contracts"],["Lien Waiver","13 Lien Waivers"],["CO","15 Change Orders"],["PO","16 Purchase Orders"],["Warranty","17 Warranty"],["Requisition","18 Requisitions"],["Team Doc","19 Team Documents"]];
 
 var state = { projects: [], selectedProject: null, newBidType: "GC", items: [], selectedItem: null, itemsKey: "",
-              meetProject: null, meetRows: [] };
+              meetProject: null, queue: [], archive: [] };
 
 var IN_OUTLOOK = false;
 var booted = false;
@@ -64,7 +63,7 @@ function showMailButtons(show) {
    "Other mail app" is a plain mailto:, so the phone decides — on Android
    that means the usual app chooser. */
 
-function openInOutlook(subject) {
+function openInOutlook(subject, to) {
   if (!subject) { showToast("Pick a project first.", "err"); return; }
 
   var left = false;
@@ -78,12 +77,15 @@ function openInOutlook(subject) {
     if (!left) { showToast("Outlook did not open. Try Other mail app.", "err"); }
   }, 1200);
 
-  navTo("ms-outlook://compose?subject=" + encodeURIComponent(subject));
+  var url = "ms-outlook://compose?subject=" + encodeURIComponent(subject);
+  if (to) { url += "&to=" + encodeURIComponent(to); }
+  navTo(url);
 }
 
-function openInMail(subject) {
+function openInMail(subject, to) {
   if (!subject) { showToast("Pick a project first.", "err"); return; }
-  window.location.href = "mailto:?subject=" + encodeURIComponent(subject);
+  window.location.href = "mailto:" + encodeURIComponent(to || "") +
+                         "?subject=" + encodeURIComponent(subject);
 }
 
 /* A synthetic link click survives iOS standalone mode, where assigning
@@ -148,12 +150,13 @@ function initUI() {
   on("meetProjectSearch", "input", onMeetProjectSearch);
   on("meetProjectSearch", "focus", onMeetProjectSearch);
   on("meetProjectClear", "click", clearMeetProject);
-  on("meetAdd", "click", addMeetRow);
-  on("meetSend", "click", sendMeetRows);
-  on("meetDesc", "keydown", function (e) { if (e.key === "Enter") { addMeetRow(); } });
+  on("meetAdd", "click", addQueueRow);
+  on("meetDesc", "keydown", function (e) { if (e.key === "Enter") { addQueueRow(); } });
+  on("meetTo", "keydown", function (e) { if (e.key === "Enter") { addQueueRow(); } });
+  on("backlogToggle", "click", toggleBacklog);
   fillMeetTypes();
-  restoreMeetFrom();
-  renderMeetList();
+  loadQueue();
+  renderQueue();
 
   var intake = byId("intakeAddr");
   if (intake) { intake.textContent = CONFIG.INTAKE_ADDRESS; }
@@ -457,14 +460,24 @@ function showToast(msg, kind) {
   toastTimer = setTimeout(function () { t.hidden = true; }, 3600);
 }
 
-/* ---------- meeting minutes ------------------------------------------
+/* ---------- queue -----------------------------------------------------
 
-   One row per task. Each row becomes its own email with a correctly
-   formatted subject, so the existing mail intake files it and creates the
-   Monday item — nothing new has to duplicate that logic. Rows can point at
-   different projects, which is the point for an office meeting covering
-   several jobs.
+   A to-do list of subjects you build during a meeting and work through
+   afterwards. It has no access to mail: "Open" hands the subject to
+   Outlook and you send it yourself, which is the whole point — nothing
+   leaves this panel on its own.
+
+   Rows can point at different projects; an office meeting covering several
+   jobs is exactly the case this is for, so the list groups by project.
+
+   Storage is this device's browser only. Deliberate: no server, no second
+   copy of the truth to keep in sync. The cost is that the phone and the
+   desktop keep separate lists, and clearing browser data clears the queue.
    --------------------------------------------------------------------- */
+
+var Q_KEY = "gk_queue_v1";
+var Q_ARCHIVE_KEY = "gk_queue_archive_v1";
+var ARCHIVE_DAYS = 30;
 
 function fillMeetTypes() {
   var sel = byId("meetType");
@@ -475,22 +488,6 @@ function fillMeetTypes() {
     o.textContent = t[1];
     if (t[0] === "RFI") { o.selected = true; }
     sel.appendChild(o);
-  });
-}
-
-function restoreMeetFrom() {
-  var el = byId("meetFrom");
-  if (!el) { return; }
-  var mine = "";
-  try {
-    if (IN_OUTLOOK && Office.context.mailbox.userProfile) {
-      mine = Office.context.mailbox.userProfile.emailAddress || "";
-    }
-  } catch (e) { mine = ""; }
-  if (!mine) { try { mine = localStorage.getItem("gk_meet_from") || ""; } catch (e) {} }
-  el.value = mine;
-  el.addEventListener("change", function () {
-    try { localStorage.setItem("gk_meet_from", el.value.trim()); } catch (e) {}
   });
 }
 
@@ -534,37 +531,10 @@ function clearMeetProject() {
   byId("meetProjectSearch").focus();
 }
 
-function addMeetRow() {
-  var p = state.meetProject;
-  if (!p) { showToast("Pick a project for this task.", "err"); return; }
-
-  var desc = byId("meetDesc").value.trim();
-  if (!desc) { showToast("Describe the task.", "err"); return; }
-
-  var to = byId("meetTo").value.trim();
-  var bad = badEmails(to);
-  if (!to) { showToast("Who should receive it?", "err"); return; }
-  if (bad) { showToast("Check this address: " + bad, "err"); return; }
-
-  var type = byId("meetType").value;
-  state.meetRows.push({
-    projectId: p.id || "",
-    projectName: p.name || p.code,
-    code: p.code,
-    type: type,
-    description: desc,
-    to: to,
-    subject: "[" + type + "] " + (p.name || p.code) + " - " + desc + " [" + p.code + "]"
-  });
-
-  byId("meetDesc").value = "";
-  renderMeetList();
-  byId("meetDesc").focus();
-}
 
 /* Returns the first address that does not look like an address, or "". */
 function badEmails(list) {
-  var parts = list.split(/[,;]/);
+  var parts = String(list || "").split(/[,;]/);
   for (var i = 0; i < parts.length; i++) {
     var a = parts[i].trim();
     if (!a) { continue; }
@@ -573,92 +543,254 @@ function badEmails(list) {
   return "";
 }
 
-function removeMeetRow(i) {
-  state.meetRows.splice(i, 1);
-  renderMeetList();
+function uid() {
+  return String(Date.now()) + "-" + Math.random().toString(36).slice(2, 8);
 }
 
-function renderMeetList() {
+/* Storage can throw outright — private windows, and some managed browsers
+   block it entirely. Never let that take the panel down with it. */
+function qRead(key) {
+  try {
+    var raw = localStorage.getItem(key);
+    var rows = raw ? JSON.parse(raw) : [];
+    return Array.isArray(rows) ? rows : [];
+  } catch (e) { return []; }
+}
+
+function qWrite(key, rows) {
+  try {
+    localStorage.setItem(key, JSON.stringify(rows));
+    return true;
+  } catch (e) {
+    setStatus("meetStatus", "This browser will not let the panel save the queue, so it will be gone when you close it.", true);
+    return false;
+  }
+}
+
+function loadQueue() {
+  state.queue = qRead(Q_KEY);
+  state.archive = qRead(Q_ARCHIVE_KEY);
+  pruneArchive();
+}
+
+/* The backlog answers "what did I just cross off" — a month is generous for
+   that and keeps the list from growing without limit. */
+function pruneArchive() {
+  var cutoff = Date.now() - ARCHIVE_DAYS * 86400000;
+  var kept = state.archive.filter(function (r) {
+    var t = Date.parse(r.at || "");
+    return isNaN(t) ? true : t >= cutoff;
+  });
+  if (kept.length !== state.archive.length) {
+    state.archive = kept;
+    qWrite(Q_ARCHIVE_KEY, state.archive);
+  }
+}
+
+function saveQueue() { qWrite(Q_KEY, state.queue); }
+function saveArchive() { qWrite(Q_ARCHIVE_KEY, state.archive); }
+
+/* ---------- adding ---------------------------------------------------- */
+
+function addQueueRow() {
+  var p = state.meetProject;
+  if (!p) { showToast("Pick a project for this task.", "err"); return; }
+
+  var desc = byId("meetDesc").value.trim();
+  if (!desc) { showToast("Describe the task.", "err"); return; }
+
+  var to = byId("meetTo").value.trim();
+  var bad = badEmails(to);
+  if (bad) { showToast("Check this address: " + bad, "err"); return; }
+
+  var type = byId("meetType").value;
+  state.queue.push({
+    id: uid(),
+    projectName: p.name || p.code,
+    code: p.code,
+    type: type,
+    description: desc,
+    to: to,
+    subject: "[" + type + "] " + (p.name || p.code) + " - " + desc + " [" + p.code + "]",
+    at: new Date().toISOString()
+  });
+  saveQueue();
+
+  byId("meetDesc").value = "";
+  byId("meetTo").value = "";
+  setStatus("meetStatus", "", false);
+  renderQueue();
+  byId("meetDesc").focus();
+}
+
+/* ---------- acting on a row ------------------------------------------- */
+
+function qFind(id) {
+  for (var i = 0; i < state.queue.length; i++) {
+    if (state.queue[i].id === id) { return i; }
+  }
+  return -1;
+}
+
+function queueOpen(id) {
+  var i = qFind(id);
+  if (i < 0) { return; }
+  var row = state.queue[i];
+
+  if (IN_OUTLOOK) {
+    try {
+      var mb = Office.context.mailbox;
+      if (mb && mb.displayNewMessageForm) {
+        mb.displayNewMessageForm({
+          toRecipients: row.to ? row.to.split(/[,;]/).map(function (s) { return s.trim(); }).filter(Boolean) : [],
+          subject: row.subject
+        });
+        return;
+      }
+    } catch (e) { /* fall through */ }
+    setSubject(row.subject);
+    return;
+  }
+
+  openInOutlook(row.subject, row.to);
+}
+
+/* Crossed off for good: it leaves the queue and lands in the backlog, so
+   there is always a record of what was just cleared. */
+function queueArchive(id, reason) {
+  var i = qFind(id);
+  if (i < 0) { return; }
+  var row = state.queue.splice(i, 1)[0];
+  row.reason = reason;
+  row.at = new Date().toISOString();
+  state.archive.unshift(row);
+  saveQueue();
+  saveArchive();
+  renderQueue();
+  showToast(reason === "sent" ? "Crossed off ✓" : "Removed — it is in the backlog.", "ok");
+}
+
+function queueRestore(id) {
+  for (var i = 0; i < state.archive.length; i++) {
+    if (state.archive[i].id === id) {
+      var row = state.archive.splice(i, 1)[0];
+      delete row.reason;
+      state.queue.push(row);
+      saveQueue();
+      saveArchive();
+      renderQueue();
+      showToast("Back in the queue.", "ok");
+      return;
+    }
+  }
+}
+
+/* ---------- rendering -------------------------------------------------- */
+
+function qButton(label, cls, fn) {
+  var b = document.createElement("button");
+  b.type = "button";
+  b.className = "q-btn" + (cls ? " " + cls : "");
+  b.textContent = label;
+  b.addEventListener("click", fn);
+  return b;
+}
+
+function qRowShell(row, archived) {
+  var el = document.createElement("div");
+  el.className = "meet-row" + (archived ? " q-archived" : "");
+  var main = document.createElement("div");
+  main.className = "meet-main";
+  var subj = document.createElement("div");
+  subj.className = "meet-subject";
+  subj.textContent = row.subject;
+  main.appendChild(subj);
+  if (row.to) {
+    var to = document.createElement("div");
+    to.className = "meet-to";
+    to.textContent = "→ " + row.to;
+    main.appendChild(to);
+  }
+  el.appendChild(main);
+  return { el: el, main: main };
+}
+
+function renderQueue() {
   var box = byId("meetList");
   if (!box) { return; }
   box.innerHTML = "";
 
-  var n = state.meetRows.length;
+  var n = state.queue.length;
   setText("meetCount", n ? "(" + n + ")" : "");
-  var btn = byId("meetSend");
-  if (btn) {
-    btn.disabled = !n;
-    btn.textContent = n ? "Send all (" + n + ")" : "Send all";
-  }
 
   if (!n) {
-    box.innerHTML = '<div class="meet-empty">No tasks yet. Add them one by one above.</div>';
-    return;
+    box.innerHTML = '<div class="meet-empty">Nothing queued. Add tasks one by one above.</div>';
+  } else {
+    var lastCode = null;
+    state.queue.forEach(function (row) {
+      if (row.code !== lastCode) {
+        lastCode = row.code;
+        var h = document.createElement("div");
+        h.className = "q-group";
+        h.textContent = row.projectName + " · " + row.code;
+        box.appendChild(h);
+      }
+
+      var shell = qRowShell(row, false);
+      var acts = document.createElement("div");
+      acts.className = "q-actions";
+      acts.appendChild(qButton("Open", "", function () { queueOpen(row.id); }));
+      acts.appendChild(qButton("Sent", "q-btn-done", function () { queueArchive(row.id, "sent"); }));
+      acts.appendChild(qButton("×", "q-btn-drop", function () { queueArchive(row.id, "dropped"); }));
+      shell.el.appendChild(acts);
+      box.appendChild(shell.el);
+    });
   }
 
-  state.meetRows.forEach(function (r, i) {
-    var row = document.createElement("div");
-    row.className = "meet-row";
+  renderBacklog();
+}
 
-    var main = document.createElement("div");
-    main.className = "meet-main";
-    main.innerHTML = '<div class="meet-subject">' + esc(r.subject) + '</div>' +
-                     '<div class="meet-to">→ ' + esc(r.to) + '</div>';
+function renderBacklog() {
+  var card = byId("backlogCard"), box = byId("backlogList");
+  if (!card || !box) { return; }
 
-    var del = document.createElement("button");
-    del.className = "meet-del";
-    del.type = "button";
-    del.title = "Remove";
-    del.innerHTML = "&times;";
-    del.addEventListener("click", function () { removeMeetRow(i); });
+  var n = state.archive.length;
+  card.hidden = !n;
+  setText("backlogLabel", "Backlog (" + n + ")");
+  if (!n) { return; }
 
-    row.appendChild(main);
-    row.appendChild(del);
-    box.appendChild(row);
+  box.innerHTML = "";
+  state.archive.forEach(function (row) {
+    var shell = qRowShell(row, true);
+    var stamp = document.createElement("div");
+    stamp.className = "q-stamp";
+    stamp.textContent = (row.reason === "sent" ? "Sent" : "Removed") + " · " + shortDate(row.at);
+    shell.main.appendChild(stamp);
+
+    var acts = document.createElement("div");
+    acts.className = "q-actions";
+    acts.appendChild(qButton("Put back", "", function () { queueRestore(row.id); }));
+    shell.el.appendChild(acts);
+    box.appendChild(shell.el);
   });
 }
 
-function sendMeetRows() {
-  if (!state.meetRows.length) { return; }
+function toggleBacklog() {
+  var box = byId("backlogList"), chev = byId("backlogChev"), hint = byId("backlogHint");
+  if (!box) { return; }
+  var open = box.hidden;
+  box.hidden = !open;
+  if (hint) { hint.hidden = !open; }
+  if (chev) { chev.classList.toggle("open", open); }
+}
 
-  if (!CONFIG.MEETING_ENDPOINT) {
-    showToast("Sending is not wired up yet.", "err");
-    setStatus("meetStatus", "The flow that sends these emails has not been connected yet.", true);
-    return;
+function shortDate(iso) {
+  var t = Date.parse(iso || "");
+  if (isNaN(t)) { return ""; }
+  var d = new Date(t);
+  try {
+    return d.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+  } catch (e) {
+    return d.getMonth() + 1 + "/" + d.getDate();
   }
-
-  var from = (byId("meetFrom").value || "").trim();
-  if (!from || badEmails(from)) { showToast("Enter your own email first.", "err"); return; }
-
-  var btn = byId("meetSend");
-  btn.disabled = true;
-  btn.textContent = "Sending…";
-  setStatus("meetStatus", "", false);
-
-  var payload = {
-    meeting: {
-      title: (byId("meetTitle").value || "").trim(),
-      date: new Date().toISOString().slice(0, 10),
-      owner: from
-    },
-    rows: state.meetRows
-  };
-
-  fetch(CONFIG.MEETING_ENDPOINT, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload)
-  }).then(function (res) {
-    if (!res.ok) { throw new Error("HTTP " + res.status); }
-    var sent = state.meetRows.length;
-    state.meetRows = [];
-    renderMeetList();
-    showToast(sent + " emails sent ✓", "ok");
-    setStatus("meetStatus", "Sent " + sent + ". They will show up in Monday once the intake picks them up.", false);
-  }).catch(function (e) {
-    btn.disabled = false;
-    btn.textContent = "Send all (" + state.meetRows.length + ")";
-    showToast("Could not send: " + e.message, "err");
-    setStatus("meetStatus", "Nothing was sent. The list is still here — try again.", true);
-  });
 }
