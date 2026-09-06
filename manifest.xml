@@ -1,134 +1,128 @@
-<?xml version="1.0" encoding="UTF-8"?>
 <OfficeApp
-  xmlns="http://schemas.microsoft.com/office/appforoffice/1.1"
-  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-  xmlns:bt="http://schemas.microsoft.com/office/officeappbasictypes/1.0"
-  xmlns:mailappor="http://schemas.microsoft.com/office/mailappversionoverrides/1.0"
-  xsi:type="MailApp">
+xmlns="http://schemas.microsoft.com/office/appforoffice/1.1"
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+xmlns:bt="http://schemas.microsoft.com/office/officeappbasictypes/1.0"
+xmlns:mailappor="http://schemas.microsoft.com/office/mailappversionoverrides/1.0"
+xsi:type="MailApp">
 
-  <Id>54258303-a3b2-4093-97cc-d87c7b8a1818</Id>
-  <Version>1.1.6.0</Version>
-  <ProviderName>Gekonny</ProviderName>
-  <DefaultLocale>en-US</DefaultLocale>
-  <DisplayName DefaultValue="Gekonny Subject Builder"/>
-  <Description DefaultValue="Format email subjects for Monday automation: pick a project and type, or continue an existing thread."/>
-  <IconUrl DefaultValue="https://zakhargalan.in/gekonny-outlook-addin/assets/icon-64.png"/>
-  <HighResolutionIconUrl DefaultValue="https://zakhargalan.in/gekonny-outlook-addin/assets/icon-128.png"/>
-  <SupportUrl DefaultValue="https://zakhargalan.in/gekonny-outlook-addin/"/>
+<!-- ===== Add-in identity ===== -->
+<Id>54258303-a3b2-4093-97cc-d87c7b8a1818</Id>
+<Version>1.2.0.0</Version>
+<ProviderName>Gekonny</ProviderName>
+<DefaultLocale>en-US</DefaultLocale>
+<DisplayName DefaultValue="Gekonny Subject Builder"/>
+<Description DefaultValue="Format email subjects for Monday automation: pick a project and type, or register a new bid."/>
+<IconUrl DefaultValue="https://zakhargalan.in/gekonny-outlook-addin/assets/icon-64.png"/>
+<HighResolutionIconUrl DefaultValue="https://zakhargalan.in/gekonny-outlook-addin/assets/icon-128.png"/>
+<SupportUrl DefaultValue="https://zakhargalan.in/gekonny-outlook-addin/"/>
 
-  <AppDomains>
-    <AppDomain>https://zakhargalan.in</AppDomain>
-    <AppDomain>https://defaultd8bc567963cc4849af903e6e3f8795.cc.environment.api.powerplatform.com</AppDomain>
-    <AppDomain>https://appsforoffice.microsoft.com</AppDomain>
-  </AppDomains>
+<!-- ===== Hosts ===== -->
+<Hosts>
+<Host Name="Mailbox"/>
+</Hosts>
 
-  <Hosts>
-    <Host Name="Mailbox"/>
-  </Hosts>
+<Requirements>
+<Sets>
+<Set Name="Mailbox" MinVersion="1.3"/>
+</Sets>
+</Requirements>
 
-  <Requirements>
-    <Sets>
-      <Set Name="Mailbox" MinVersion="1.3"/>
-    </Sets>
-  </Requirements>
+<!-- ===== Default form settings (legacy fallback) ===== -->
+<FormSettings>
+<Form xsi:type="ItemRead">
+<DesktopSettings>
+<SourceLocation DefaultValue="https://zakhargalan.in/gekonny-outlook-addin/taskpane.html"/>
+<RequestedHeight>250</RequestedHeight>
+</DesktopSettings>
+</Form>
+</FormSettings>
 
-  <FormSettings>
-    <Form xsi:type="ItemRead">
-      <DesktopSettings>
-        <SourceLocation DefaultValue="https://zakhargalan.in/gekonny-outlook-addin/taskpane.html"/>
-        <RequestedHeight>250</RequestedHeight>
-      </DesktopSettings>
-    </Form>
-  </FormSettings>
+<Permissions>ReadWriteItem</Permissions>
 
-  <Permissions>ReadWriteItem</Permissions>
+<Rule xsi:type="RuleCollection" Mode="Or">
+<Rule xsi:type="ItemIs" ItemType="Message" FormType="Edit"/>
+</Rule>
 
-  <Rule xsi:type="RuleCollection" Mode="Or">
-    <Rule xsi:type="ItemIs" ItemType="Message" FormType="Edit"/>
-    <Rule xsi:type="ItemIs" ItemType="Message" FormType="Read"/>
-  </Rule>
+<!-- ===== Modern features: task pane button + Smart Alert ===== -->
+<VersionOverrides xmlns="http://schemas.microsoft.com/office/mailappversionoverrides" xsi:type="VersionOverridesV1_0">
+<VersionOverrides xmlns="http://schemas.microsoft.com/office/mailappversionoverrides/1.1" xsi:type="VersionOverridesV1_1">
 
-  <VersionOverrides xmlns="http://schemas.microsoft.com/office/mailappversionoverrides" xsi:type="VersionOverridesV1_0">
+<Requirements>
+<bt:Sets DefaultMinVersion="1.12">
+<bt:Set Name="Mailbox"/>
+</bt:Sets>
+</Requirements>
 
-    <Requirements>
-      <bt:Sets DefaultMinVersion="1.3">
-        <bt:Set Name="Mailbox"/>
-      </bt:Sets>
-    </Requirements>
+<Hosts>
+<Host xsi:type="MailHost">
 
-    <Hosts>
-      <Host xsi:type="MailHost">
-        <DesktopFormFactor>
-          <FunctionFile resid="Commands.Url"/>
+<!-- Runtime that hosts the Smart Alert (OnMessageSend) handler -->
+<Runtimes>
+<Runtime resid="WebViewRuntime.Url">
+<Override type="javascript" resid="JSRuntime.Url"/>
+</Runtime>
+</Runtimes>
 
-          <ExtensionPoint xsi:type="MessageComposeCommandSurface">
-            <OfficeTab id="TabDefault">
-              <Group id="gekonnyGroup">
-                <Label resid="GroupLabel"/>
-                <Control xsi:type="Button" id="openSubjectBuilderButton">
-                  <Label resid="TaskpaneButton.Label"/>
-                  <Supertip>
-                    <Title resid="TaskpaneButton.Label"/>
-                    <Description resid="TaskpaneButton.Tooltip"/>
-                  </Supertip>
-                  <Icon>
-                    <bt:Image size="16" resid="Icon.16"/>
-                    <bt:Image size="32" resid="Icon.32"/>
-                    <bt:Image size="80" resid="Icon.80"/>
-                  </Icon>
-                  <Action xsi:type="ShowTaskpane">
-                    <SourceLocation resid="Taskpane.Url"/>
-                  </Action>
-                </Control>
-              </Group>
-            </OfficeTab>
-          </ExtensionPoint>
+<DesktopFormFactor>
+<FunctionFile resid="Commands.Url"/>
 
-          <ExtensionPoint xsi:type="MessageReadCommandSurface">
-            <OfficeTab id="TabDefault">
-              <Group id="gekonnyGroupRead">
-                <Label resid="GroupLabel"/>
-                <Control xsi:type="Button" id="openSubjectBuilderButtonRead">
-                  <Label resid="TaskpaneButton.Label"/>
-                  <Supertip>
-                    <Title resid="TaskpaneButton.Label"/>
-                    <Description resid="TaskpaneButton.Tooltip"/>
-                  </Supertip>
-                  <Icon>
-                    <bt:Image size="16" resid="Icon.16"/>
-                    <bt:Image size="32" resid="Icon.32"/>
-                    <bt:Image size="80" resid="Icon.80"/>
-                  </Icon>
-                  <Action xsi:type="ShowTaskpane">
-                    <SourceLocation resid="Taskpane.Url"/>
-                  </Action>
-                </Control>
-              </Group>
-            </OfficeTab>
-          </ExtensionPoint>
+<!-- Ribbon button shown when composing a message -->
+<ExtensionPoint xsi:type="MessageComposeCommandSurface">
+<OfficeTab id="TabDefault">
+<Group id="gekonnyGroup">
+<Label resid="GroupLabel"/>
+<Control xsi:type="Button" id="openSubjectBuilderButton">
+<Label resid="TaskpaneButton.Label"/>
+<Supertip>
+<Title resid="TaskpaneButton.Label"/>
+<Description resid="TaskpaneButton.Tooltip"/>
+</Supertip>
+<Icon>
+<bt:Image size="16" resid="Icon.16"/>
+<bt:Image size="32" resid="Icon.32"/>
+<bt:Image size="80" resid="Icon.80"/>
+</Icon>
+<Action xsi:type="ShowTaskpane">
+<SourceLocation resid="Taskpane.Url"/>
+</Action>
+</Control>
+</Group>
+</OfficeTab>
+</ExtensionPoint>
 
-        </DesktopFormFactor>
-      </Host>
-    </Hosts>
+<!-- Smart Alert: runs when the user sends a message -->
+<ExtensionPoint xsi:type="LaunchEvent">
+<LaunchEvents>
+<LaunchEvent Type="OnMessageSend" FunctionName="onMessageSendHandler" SendMode="PromptUser"/>
+</LaunchEvents>
+<SourceLocation resid="WebViewRuntime.Url"/>
+</ExtensionPoint>
 
-    <Resources>
-      <bt:Images>
-        <bt:Image id="Icon.16" DefaultValue="https://zakhargalan.in/gekonny-outlook-addin/assets/icon-16.png"/>
-        <bt:Image id="Icon.32" DefaultValue="https://zakhargalan.in/gekonny-outlook-addin/assets/icon-32.png"/>
-        <bt:Image id="Icon.80" DefaultValue="https://zakhargalan.in/gekonny-outlook-addin/assets/icon-80.png"/>
-      </bt:Images>
-      <bt:Urls>
-        <bt:Url id="Taskpane.Url" DefaultValue="https://zakhargalan.in/gekonny-outlook-addin/taskpane.html"/>
-        <bt:Url id="Commands.Url" DefaultValue="https://zakhargalan.in/gekonny-outlook-addin/commands.html"/>
-      </bt:Urls>
-      <bt:ShortStrings>
-        <bt:String id="GroupLabel" DefaultValue="Gekonny"/>
-        <bt:String id="TaskpaneButton.Label" DefaultValue="Subject Builder"/>
-      </bt:ShortStrings>
-      <bt:LongStrings>
-        <bt:String id="TaskpaneButton.Tooltip" DefaultValue="Build a Monday-ready subject: [Type] address - description [CODE]."/>
-      </bt:LongStrings>
-    </Resources>
+</DesktopFormFactor>
+</Host>
+</Hosts>
 
-  </VersionOverrides>
+<Resources>
+<bt:Images>
+<bt:Image id="Icon.16" DefaultValue="https://zakhargalan.in/gekonny-outlook-addin/assets/icon-16.png"/>
+<bt:Image id="Icon.32" DefaultValue="https://zakhargalan.in/gekonny-outlook-addin/assets/icon-32.png"/>
+<bt:Image id="Icon.80" DefaultValue="https://zakhargalan.in/gekonny-outlook-addin/assets/icon-80.png"/>
+</bt:Images>
+<bt:Urls>
+<bt:Url id="Taskpane.Url" DefaultValue="https://zakhargalan.in/gekonny-outlook-addin/taskpane.html"/>
+<bt:Url id="Commands.Url" DefaultValue="https://zakhargalan.in/gekonny-outlook-addin/commands.html"/>
+<bt:Url id="WebViewRuntime.Url" DefaultValue="https://zakhargalan.in/gekonny-outlook-addin/commands.html"/>
+<bt:Url id="JSRuntime.Url" DefaultValue="https://zakhargalan.in/gekonny-outlook-addin/commands.js"/>
+</bt:Urls>
+<bt:ShortStrings>
+<bt:String id="GroupLabel" DefaultValue="Gekonny"/>
+<bt:String id="TaskpaneButton.Label" DefaultValue="Subject Builder"/>
+</bt:ShortStrings>
+<bt:LongStrings>
+<bt:String id="TaskpaneButton.Tooltip" DefaultValue="Pick a project and type to format the subject for Monday automation."/>
+</bt:LongStrings>
+</Resources>
+
+</VersionOverrides>
+</VersionOverrides>
 </OfficeApp>
