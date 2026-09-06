@@ -29,6 +29,21 @@ function subjectLooksTagged(subject) {
 
    Addresses, lower case, one per line. */
 var ALERT_EXEMPT = [
+  "grabinovich@gekonny.com",
+  "juanalvarez@gekonny.com",
+  "ulises@gekonny.com",
+  "danielm@gekonny.com",
+  "davido@gekonny.com",
+  "abalderas@gekonny.com",
+  "figueroa@gekonny.com",
+  "genadi@gekonny.com",
+  "vv@gekonny.com",
+  "on@gekonny.com",
+  "dsvirskiy@gekonny.com",
+  "dimon@gekonny.com",
+  "timur@gekonny.com",
+  "apinvoices@gekonny.com",
+  "build@gekonny.com"
 ];
 
 function alertIsExemptForMe() {
