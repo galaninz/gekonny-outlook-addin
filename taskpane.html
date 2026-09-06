@@ -11,7 +11,11 @@
   <meta name="apple-mobile-web-app-capable" content="yes"/>
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
   <meta name="apple-mobile-web-app-title" content="Subject"/>
-  <link rel="stylesheet" href="taskpane.css"/>
+  <!-- ?v= is bumped on every publish. Without it the host's ten-minute
+       max-age means a fix can sit on the server while browsers keep running
+       the old file, and a reload does not help because the reload goes
+       through the same cache. -->
+  <link rel="stylesheet" href="taskpane.css?v=4"/>
   <script src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js"></script>
 </head>
 <body>
@@ -167,6 +171,6 @@
   <div id="toast" class="toast" hidden></div>
 
 </div>
-<script src="taskpane.js"></script>
+<script src="taskpane.js?v=4"></script>
 </body>
 </html>
