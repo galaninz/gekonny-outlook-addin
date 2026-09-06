@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<OfficeApp
+  xmlns="http://schemas.microsoft.com/office/appforoffice/1.1"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xmlns:bt="http://schemas.microsoft.com/office/officeappbasictypes/1.0"
+  xmlns:mailappor="http://schemas.microsoft.com/office/mailappversionoverrides/1.0"
+  xsi:type="MailApp">
+
+  <Id>3f7c1e90-5b42-4a18-9d63-8e2a41c7b501</Id>
+  <Version>1.0.0.0</Version>
+  <ProviderName>Gekonny</ProviderName>
+  <DefaultLocale>en-US</DefaultLocale>
+  <DisplayName DefaultValue="GK Probe A"/>
+  <Description DefaultValue="Diagnostic stub A."/>
+  <IconUrl DefaultValue="https://zakhargalan.in/gekonny-outlook-addin/assets/icon-64.png"/>
+  <HighResolutionIconUrl DefaultValue="https://zakhargalan.in/gekonny-outlook-addin/assets/icon-128.png"/>
+  <SupportUrl DefaultValue="https://zakhargalan.in/gekonny-outlook-addin/"/>
+
+  <Hosts>
+    <Host Name="Mailbox"/>
+  </Hosts>
+
+  <Requirements>
+    <Sets>
+      <Set Name="Mailbox" MinVersion="1.1"/>
+    </Sets>
+  </Requirements>
+
+  <FormSettings>
+    <Form xsi:type="ItemRead">
+      <DesktopSettings>
+        <SourceLocation DefaultValue="https://zakhargalan.in/gekonny-outlook-addin/taskpane.html"/>
+        <RequestedHeight>250</RequestedHeight>
+      </DesktopSettings>
+    </Form>
+  </FormSettings>
+
+  <Permissions>ReadWriteItem</Permissions>
+
+  <Rule xsi:type="RuleCollection" Mode="Or">
+    <Rule xsi:type="ItemIs" ItemType="Message" FormType="Edit"/>
+    <Rule xsi:type="ItemIs" ItemType="Message" FormType="Read"/>
+  </Rule>
+
+</OfficeApp>
