@@ -11,7 +11,14 @@ var CONFIG = {
   ITEMS_ENDPOINT: "https://defaultd8bc567963cc4849af903e6e3f8795.cc.environment.api.powerplatform.com/powerautomate/automations/direct/cu/19/workflows/23f3a10557784d41bde6b691334b3180/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=3uMez77ZGfTDxmWojlyyOErK1fyMM1Zo-9lqtzXmmSU"
 };
 
-var TYPES = [["Drawing","01 Drawings"],["Specification","02 Specifications"],["Submittal","03 Submittals"],["RFI","04 RFIs"],["Schedule","05 Schedule"],["Takeoff","06 Takeoff"],["Meeting Minutes","07 Meeting Minutes"],["Photo","08 Photos"],["Permit","09 Permits & Violations"],["Report","10 Reports & Punchlists"],["Insurance","11 Insurance"],["Agreement","12 Agreements & Contracts"],["Lien Waiver","13 Lien Waivers"],["CO","15 Change Orders"],["PO","16 Purchase Orders"],["Warranty","17 Warranty"],["Requisition","18 Requisitions"],["Team Doc","19 Team Documents"],["Trash","20 Trash & Debris"],["SOW","21 Scope of Work"],["Invoice","22 Invoices"],["Inspection","23 Inspections"]];
+/* The first value of each pair is the tag that goes into the subject, and
+   the mail intake (PC v2) keys on it to pick the folder — so a tag added
+   here that PC v2 does not know files nowhere. Keep the two in step.
+   The second value is only the label shown in the dropdown, which is why
+   it reads "21 Scope of Work" while the folder is 21_ScopeOfWork.
+   PC v2 also knows RFP -> 14_BidsAndProposals; the panel has no entry for
+   it, because new bids are registered in Monday directly. */
+var TYPES = [["Drawing","01 Drawings"],["Specification","02 Specifications"],["Submittal","03 Submittals"],["RFI","04 RFIs"],["Schedule","05 Schedule"],["Takeoff","06 Takeoff"],["Meeting Minutes","07 Meeting Minutes"],["Photo","08 Photos"],["Permit","09 Permits & Violations"],["Report","10 Reports & Punchlists"],["Insurance","11 Insurance"],["Agreement","12 Agreements & Contracts"],["Lien Waiver","13 Lien Waivers"],["CO","15 Change Orders"],["PO","16 Purchase Orders"],["Warranty","17 Warranty"],["Requisition","18 Requisitions"],["Team Doc","19 Team Documents"],["Trash","20 Trash & Debris"],["Scope","21 Scope of Work"],["Invoice","22 Invoices"],["Inspection","23 Inspections"]];
 
 var state = { projects: [], selectedProject: null, items: [], selectedItem: null, itemsKey: "",
               meetProject: null, queue: [], archive: [], loadedFromQueue: null };
