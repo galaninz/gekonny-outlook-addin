@@ -15,7 +15,7 @@
        max-age means a fix can sit on the server while browsers keep running
        the old file, and a reload does not help because the reload goes
        through the same cache. -->
-  <link rel="stylesheet" href="taskpane.css?v=4"/>
+  <link rel="stylesheet" href="taskpane.css?v=5"/>
   <script src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js"></script>
 </head>
 <body>
@@ -62,26 +62,7 @@
 
     <div class="card">
       <label class="field-label" for="typeSelect">Type &middot; folder</label>
-      <select id="typeSelect" class="input">
-        <option value="Drawing">01 Drawings</option>
-        <option value="Specification">02 Specifications</option>
-        <option value="Submittal">03 Submittals</option>
-        <option value="RFI" selected>04 RFIs</option>
-        <option value="Schedule">05 Schedule</option>
-        <option value="Takeoff">06 Takeoff</option>
-        <option value="Meeting Minutes">07 Meeting Minutes</option>
-        <option value="Photo">08 Photos</option>
-        <option value="Permit">09 Permits &amp; Violations</option>
-        <option value="Report">10 Reports &amp; Punchlists</option>
-        <option value="Insurance">11 Insurance</option>
-        <option value="Agreement">12 Agreements &amp; Contracts</option>
-        <option value="Lien Waiver">13 Lien Waivers</option>
-        <option value="CO">15 Change Orders</option>
-        <option value="PO">16 Purchase Orders</option>
-        <option value="Warranty">17 Warranty</option>
-        <option value="Requisition">18 Requisitions</option>
-        <option value="Team Doc">19 Team Documents</option>
-      </select>
+      <select id="typeSelect" class="input"></select>
 
       <label class="field-label">Thread</label>
       <div class="segmented">
@@ -171,6 +152,6 @@
   <div id="toast" class="toast" hidden></div>
 
 </div>
-<script src="taskpane.js?v=4"></script>
+<script src="taskpane.js?v=5"></script>
 </body>
 </html>

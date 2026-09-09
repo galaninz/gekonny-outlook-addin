@@ -11,7 +11,7 @@ var CONFIG = {
   ITEMS_ENDPOINT: "https://defaultd8bc567963cc4849af903e6e3f8795.cc.environment.api.powerplatform.com/powerautomate/automations/direct/cu/19/workflows/23f3a10557784d41bde6b691334b3180/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=3uMez77ZGfTDxmWojlyyOErK1fyMM1Zo-9lqtzXmmSU"
 };
 
-var TYPES = [["Drawing","01 Drawings"],["Specification","02 Specifications"],["Submittal","03 Submittals"],["RFI","04 RFIs"],["Schedule","05 Schedule"],["Takeoff","06 Takeoff"],["Meeting Minutes","07 Meeting Minutes"],["Photo","08 Photos"],["Permit","09 Permits & Violations"],["Report","10 Reports & Punchlists"],["Insurance","11 Insurance"],["Agreement","12 Agreements & Contracts"],["Lien Waiver","13 Lien Waivers"],["CO","15 Change Orders"],["PO","16 Purchase Orders"],["Warranty","17 Warranty"],["Requisition","18 Requisitions"],["Team Doc","19 Team Documents"]];
+var TYPES = [["Drawing","01 Drawings"],["Specification","02 Specifications"],["Submittal","03 Submittals"],["RFI","04 RFIs"],["Schedule","05 Schedule"],["Takeoff","06 Takeoff"],["Meeting Minutes","07 Meeting Minutes"],["Photo","08 Photos"],["Permit","09 Permits & Violations"],["Report","10 Reports & Punchlists"],["Insurance","11 Insurance"],["Agreement","12 Agreements & Contracts"],["Lien Waiver","13 Lien Waivers"],["CO","15 Change Orders"],["PO","16 Purchase Orders"],["Warranty","17 Warranty"],["Requisition","18 Requisitions"],["Team Doc","19 Team Documents"],["Trash","20 Trash & Debris"],["SOW","21 Scope of Work"],["Invoice","22 Invoices"],["Inspection","23 Inspections"]];
 
 var state = { projects: [], selectedProject: null, items: [], selectedItem: null, itemsKey: "",
               meetProject: null, queue: [], archive: [], loadedFromQueue: null };
@@ -145,7 +145,8 @@ function initUI() {
   on("meetDesc", "keydown", function (e) { if (e.key === "Enter") { addQueueRow(); } });
   on("meetTo", "keydown", function (e) { if (e.key === "Enter") { addQueueRow(); } });
   on("backlogToggle", "click", toggleBacklog);
-  fillMeetTypes();
+  fillTypes("typeSelect");
+  fillTypes("meetType");
   loadQueue();
   renderQueue();
 
@@ -457,8 +458,11 @@ var Q_KEY = "gk_queue_v1";
 var Q_ARCHIVE_KEY = "gk_queue_archive_v1";
 var ARCHIVE_DAYS = 30;
 
-function fillMeetTypes() {
-  var sel = byId("meetType");
+/* Both type pickers are built from TYPES. They used to disagree — one was
+   filled from here, the other was hand-written in the HTML — which meant
+   adding a folder in one place silently left the other a list short. */
+function fillTypes(id) {
+  var sel = byId(id);
   if (!sel || sel.options.length) { return; }
   TYPES.forEach(function (t) {
     var o = document.createElement("option");
