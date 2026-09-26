@@ -1,4 +1,4 @@
-/* Gekonny Subject Builder — v3.0
+/* Gekonny Subject Builder — v3.1
    Works inside Outlook (Apply to subject), as a web page, and as an
    installed app on phone or desktop (Copy subject / Open in Mail).
 
@@ -16,9 +16,9 @@ var CONFIG = {
    here that PC v2 does not know files nowhere. Keep the two in step.
    The second value is only the label shown in the dropdown, which is why
    it reads "21 Scope of Work" while the folder is 21_ScopeOfWork.
-   PC v2 also knows RFP -> 14_BidsAndProposals; the panel has no entry for
-   it, because new bids are registered in Monday directly. */
-var TYPES = [["Drawing","01 Drawings"],["Specification","02 Specifications"],["Submittal","03 Submittals"],["RFI","04 RFIs"],["Schedule","05 Schedule"],["Takeoff","06 Takeoff"],["Meeting Minutes","07 Meeting Minutes"],["Photo","08 Photos"],["Permit","09 Permits & Violations"],["Report","10 Reports & Punchlists"],["Insurance","11 Insurance"],["Agreement","12 Agreements & Contracts"],["Lien Waiver","13 Lien Waivers"],["CO","15 Change Orders"],["PO","16 Purchase Orders"],["Warranty","17 Warranty"],["Requisition","18 Requisitions"],["Team Doc","19 Team Documents"],["Trash","20 Trash & Debris"],["Scope","21 Scope of Work"],["Invoice","22 Invoices"],["Inspection","23 Inspections"]];
+   RFP -> 14_BidsAndProposals: on a tender (RFP / Bid Pipeline) PC v2 turns
+   an [RFP] email into Bid Invitation rows, one per sub in To. */
+var TYPES = [["Drawing","01 Drawings"],["Specification","02 Specifications"],["Submittal","03 Submittals"],["RFI","04 RFIs"],["Schedule","05 Schedule"],["Takeoff","06 Takeoff"],["Meeting Minutes","07 Meeting Minutes"],["Photo","08 Photos"],["Permit","09 Permits & Violations"],["Report","10 Reports & Punchlists"],["Insurance","11 Insurance"],["Agreement","12 Agreements & Contracts"],["Lien Waiver","13 Lien Waivers"],["RFP","14 Bids & Proposals"],["CO","15 Change Orders"],["PO","16 Purchase Orders"],["Warranty","17 Warranty"],["Requisition","18 Requisitions"],["Team Doc","19 Team Documents"],["Trash","20 Trash & Debris"],["Scope","21 Scope of Work"],["Invoice","22 Invoices"],["Inspection","23 Inspections"]];
 
 var state = { projects: [], selectedProject: null, items: [], selectedItem: null, itemsKey: "",
               meetProject: null, queue: [], archive: [], loadedFromQueue: null };
