@@ -1,13 +1,19 @@
-/* Gekonny Subject Builder — v3.1
+/* Gekonny Subject Builder — v3.3
    Works inside Outlook (Apply to subject), as a web page, and as an
    installed app on phone or desktop (Copy subject / Open in Mail).
 
    New item:        [Type] Address - description [CODE]
    Existing thread: [Type] Address - item name [CODE] {#itemId}
+
+   v3.3: opened on an email you are READING, the panel shows "Add to Monday"
+   instead — the email (with its history) goes into Monday through the flow
+   "Add Email to Monday" (CONFIG.LINK_ENDPOINT).
 */
 
 var CONFIG = {
   PROJECTS_ENDPOINT: "https://defaultd8bc567963cc4849af903e6e3f8795.cc.environment.api.powerplatform.com/powerautomate/automations/direct/workflows/a267216360ff4b788436407b67580369/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=gX1bour4ERee8isgpJsthBwnI1Va3WLwcWB33tkjSB4",
+  /* Flow "Add Email to Monday (Subject Builder)" — HTTP POST URL */
+  LINK_ENDPOINT: "https://defaultd8bc567963cc4849af903e6e3f8795.cc.environment.api.powerplatform.com:443/powerautomate/automations/direct/cu/29/workflows/73f8e9ae43204772ba20fac0000f58ba/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=s2U5STeEQcGg8_u0yDmJWNlp_fS1AaeJ23LumLy92fQ",
   ITEMS_ENDPOINT: "https://defaultd8bc567963cc4849af903e6e3f8795.cc.environment.api.powerplatform.com/powerautomate/automations/direct/cu/19/workflows/23f3a10557784d41bde6b691334b3180/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=3uMez77ZGfTDxmWojlyyOErK1fyMM1Zo-9lqtzXmmSU"
 };
 
@@ -20,11 +26,24 @@ var CONFIG = {
    an [RFP] email into Bid Invitation rows, one per sub in To. */
 var TYPES = [["Drawing","01 Drawings"],["Specification","02 Specifications"],["Submittal","03 Submittals"],["RFI","04 RFIs"],["Schedule","05 Schedule"],["Takeoff","06 Takeoff"],["Meeting Minutes","07 Meeting Minutes"],["Photo","08 Photos"],["Permit","09 Permits & Violations"],["Report","10 Reports & Punchlists"],["Insurance","11 Insurance"],["Agreement","12 Agreements & Contracts"],["Lien Waiver","13 Lien Waivers"],["RFP","14 Bids & Proposals"],["CO","15 Change Orders"],["PO","16 Purchase Orders"],["Warranty","17 Warranty"],["Requisition","18 Requisitions"],["Team Doc","19 Team Documents"],["Trash","20 Trash & Debris"],["Scope","21 Scope of Work"],["Invoice","22 Invoices"],["Inspection","23 Inspections"]];
 
+/* Numbered documents: the mail intake (PC v2) numbers them in "Number #"
+   and files each one into its own Dropbox folder, e.g. 15_CO/CO#1 - Subject.
+   Same prefixes as PC v2 uses. */
+var NUM_PREFIX = { "Submittal": "SUB", "RFI": "RFI", "CO": "CO", "PO": "PO", "Requisition": "REQ", "Invoice": "INV" };
+function numLabel(type, num) {
+  if (!num) { return ""; }
+  return (NUM_PREFIX[type] || type) + "#" + num;
+}
+
 var state = { projects: [], selectedProject: null, items: [], selectedItem: null, itemsKey: "",
-              meetProject: null, queue: [], archive: [], loadedFromQueue: null };
+              meetProject: null, queue: [], archive: [], loadedFromQueue: null,
+              readRecips: [], readBusy: false };
 
 var IN_OUTLOOK = false;
 var booted = false;
+var READ_MODE = false;        /* v3.3: panel opened on an email being read */
+var readMsg = null;
+var readHandlerAdded = false;
 
 /* ---------- boot ---------------------------------------------------- */
 
@@ -33,6 +52,7 @@ function boot(inOutlook) {
   booted = true;
   IN_OUTLOOK = !!inOutlook;
   try { initUI(); } catch (e) { showToast("UI error: " + e.message, "err"); }
+  if (IN_OUTLOOK && detectReadMode()) { enterReadMode(false); }
   loadProjects();
 }
 
@@ -42,6 +62,7 @@ function markOutlook() {
   IN_OUTLOOK = true;
   setText("applyExisting", "Apply to subject");
   showMailButtons(false);
+  if (detectReadMode()) { enterReadMode(false); }
 }
 
 /* Installed as an app: the service worker keeps the panel opening instantly
@@ -280,6 +301,7 @@ function clearProject() {
 
 function onTypeChange() {
   state.selectedItem = null;
+  if (READ_MODE) { renderReadRecipients(); }
   if (isThreadMode()) { loadItems(false); }
   renderExistingPreview();
 }
@@ -319,14 +341,17 @@ function renderItemList() {
   if (!box) { return; }
   box.innerHTML = "";
   var q = (byId("itemSearch") ? byId("itemSearch").value : "").trim().toLowerCase();
+  var type = byId("typeSelect") ? byId("typeSelect").value : "";
   var rows = state.items.filter(function (i) {
-    return !q || (i.name || "").toLowerCase().indexOf(q) > -1 || (i.ref || "").toLowerCase().indexOf(q) > -1;
+    return !q || (i.name || "").toLowerCase().indexOf(q) > -1 || (i.ref || "").toLowerCase().indexOf(q) > -1 ||
+           numLabel(type, i.num).toLowerCase().indexOf(q) > -1;
   });
   if (!rows.length) { box.innerHTML = '<div class="project-item"><div class="empty">No items.</div></div>'; return; }
   rows.slice(0, 50).forEach(function (i) {
     var row = document.createElement("div");
     row.className = "project-item" + (state.selectedItem && state.selectedItem.id === i.id ? " item-active" : "");
     var meta = [];
+    if (i.num) { meta.push(numLabel(type, i.num)); }
     if (i.ref && i.ref.charAt(0) !== "#") { meta.push(i.ref); }
     if (i.status) { meta.push(i.status); }
     if (i.date) { meta.push(i.date); }
@@ -351,7 +376,8 @@ function buildExistingSubject() {
   if (isThreadMode()) {
     var it = state.selectedItem;
     if (!it) { return null; }
-    var s = "[" + type + "] " + (p.name || p.code) + " - " + it.name + " [" + p.code + "]";
+    var nl = numLabel(type, it.num);
+    var s = "[" + type + "] " + (p.name || p.code) + " - " + (nl ? nl + " " : "") + it.name + " [" + p.code + "]";
     if (it.id) { s += " {#" + it.id + "}"; }
     return s;
   }
@@ -362,6 +388,12 @@ function buildExistingSubject() {
 }
 
 function renderExistingPreview() {
+  if (READ_MODE) {
+    var r = buildReadPreview();
+    byId("previewExisting").textContent = r || "—";
+    byId("applyExisting").disabled = !r || state.readBusy;
+    return;
+  }
   var s = buildExistingSubject();
   byId("previewExisting").textContent = s || "—";
   byId("applyExisting").disabled = !s;
@@ -375,7 +407,10 @@ function renderExistingPreview() {
   }
 }
 
-function applyExisting() { var s = buildExistingSubject(); if (s) { setSubject(s); } }
+function applyExisting() {
+  if (READ_MODE) { addToMonday(); return; }
+  var s = buildExistingSubject(); if (s) { setSubject(s); }
+}
 
 function setSubject(subject) {
   if (!IN_OUTLOOK || !Office.context.mailbox.item || !Office.context.mailbox.item.subject) {
@@ -390,6 +425,272 @@ function setSubject(subject) {
   } catch (e) {
     copyText(subject, "Could not set subject — copied instead.");
   }
+}
+
+/* ---------- read mode: Add to Monday (v3.3) ---------------------------
+
+   The panel opened on an email you are READING (it cannot change that
+   email's subject). Pick the project and type and press "Add to Monday":
+   the flow "Add Email to Monday" puts the email, with its history, into
+   Monday — for RFP one Bid Invitation per chosen outside recipient, for any
+   other type a new row in the type's group or the existing row you pick.
+   It also stores the conversation, so replies land on that row and the
+   Follow-up from Monday answers in the same thread. */
+
+/* READ_MODE, readMsg, readHandlerAdded are declared at the top (boot can run first). */
+
+function detectReadMode() {
+  try {
+    var it = Office.context.mailbox.item;
+    return !!it && typeof it.subject === "string";
+  } catch (e) { return false; }
+}
+
+function cleanSubject(s) {
+  return String(s || "").replace(/^(\s*(re|fw|fwd|aw)\s*:\s*)+/i, "").trim();
+}
+
+function addrList(arr) {
+  var out = [];
+  (arr || []).forEach(function (a) {
+    if (a && a.emailAddress) { out.push(String(a.emailAddress).toLowerCase().trim()); }
+  });
+  return out;
+}
+
+function collectReadMessage() {
+  var it = Office.context.mailbox.item;
+  var from = it.from || it.sender || {};
+  var dt = it.dateTimeCreated ? new Date(it.dateTimeCreated) : null;
+  return {
+    subject: it.subject || "",
+    from: String(from.emailAddress || "").toLowerCase().trim(),
+    fromName: from.displayName || "",
+    to: addrList(it.to),
+    cc: addrList(it.cc),
+    date: dt ? dt.toISOString() : "",
+    dateText: dt ? dt.toLocaleString() : "",
+    internetMessageId: it.internetMessageId || "",
+    conversationId: it.conversationId || ""
+  };
+}
+
+/* Outside addresses of this email: To and the sender are ticked, Cc is not. */
+function readExternals() {
+  var seen = {}, out = [];
+  function add(e, ticked) {
+    e = String(e || "").toLowerCase().trim();
+    if (!e || /@gekonny\.com$/.test(e) || seen[e]) { return; }
+    seen[e] = true;
+    out.push({ email: e, checked: ticked });
+  }
+  readMsg.to.forEach(function (e) { add(e, true); });
+  add(readMsg.from, true);
+  readMsg.cc.forEach(function (e) { add(e, false); });
+  return out;
+}
+
+function enterReadMode(fromItemChange) {
+  READ_MODE = true;
+  readMsg = collectReadMessage();
+  state.readRecips = readExternals();
+  var panel = byId("panelExisting");
+  var box = byId("readBox");
+  if (!box) {
+    box = document.createElement("div");
+    box.id = "readBox";
+    box.className = "card";
+    panel.insertBefore(box, panel.firstChild);
+    var rc = document.createElement("div");
+    rc.id = "readRecipients";
+    rc.className = "card";
+    rc.hidden = true;
+    panel.insertBefore(rc, document.querySelector("#panelExisting .preview-box"));
+    var res = document.createElement("div");
+    res.id = "readResult";
+    res.className = "hint";
+    panel.appendChild(res);
+  }
+  box.innerHTML = '<div class="field-label">This email</div>' +
+    '<div style="font-weight:600">' + esc(readMsg.subject || "(no subject)") + '</div>' +
+    '<div class="hint">' + esc((readMsg.fromName ? readMsg.fromName + " · " : "") + readMsg.from +
+    (readMsg.dateText ? " · " + readMsg.dateText : "")) + '</div>';
+  var d = byId("descInput");
+  if (d && (fromItemChange || !d.value)) { d.value = cleanSubject(readMsg.subject); }
+  var lbl = document.querySelector("#panelExisting .preview-label");
+  if (lbl) { lbl.textContent = "Will be added to Monday"; }
+  var c = byId("copyExisting");
+  if (c) { c.hidden = true; }
+  showMailButtons(false);
+  var mr = byId("mailRowExisting");
+  if (mr) { mr.style.display = "none"; }   /* .mail-row CSS overrides [hidden] */
+  setText("applyExisting", "Add to Monday");
+  if (CONFIG.LINK_ENDPOINT.indexOf("PASTE_") === 0) {
+    setStatus("readResult", "Add to Monday is not configured yet (LINK_ENDPOINT).", true);
+  } else {
+    setStatus("readResult", "", false);
+  }
+  renderReadRecipients();
+  renderExistingPreview();
+
+  /* pinned panel: follow the email the user switches to */
+  if (!readHandlerAdded && Office.context.mailbox.addHandlerAsync && Office.EventType && Office.EventType.ItemChanged) {
+    readHandlerAdded = true;
+    Office.context.mailbox.addHandlerAsync(Office.EventType.ItemChanged, function () {
+      if (detectReadMode()) { state.selectedItem = null; enterReadMode(true); }
+    });
+  }
+}
+
+function renderReadRecipients() {
+  var rc = byId("readRecipients");
+  if (!rc) { return; }
+  var isRfp = byId("typeSelect").value === "RFP";
+  /* RFP always makes (or finds) one invitation per sub — no "continue existing" */
+  var seg = document.querySelector("#panelExisting .segmented");
+  /* style.display, not .hidden: the CSS gives .segmented its own display */
+  if (seg) {
+    seg.style.display = isRfp ? "none" : "";
+    if (seg.previousElementSibling) { seg.previousElementSibling.style.display = isRfp ? "none" : ""; }
+  }
+  if (isRfp && isThreadMode()) { setMode("new"); }
+  rc.hidden = !isRfp;
+  if (!isRfp) { return; }
+  rc.innerHTML = "";
+  var head = document.createElement("div");
+  head.className = "field-label";
+  head.textContent = "Bid Invitation for";
+  rc.appendChild(head);
+  if (!state.readRecips.length) {
+    var none = document.createElement("div");
+    none.className = "hint error";
+    none.textContent = "No outside address in this email.";
+    rc.appendChild(none);
+    return;
+  }
+  state.readRecips.forEach(function (r) {
+    var row = document.createElement("label");
+    row.style.display = "flex";
+    row.style.alignItems = "center";
+    row.style.gap = "8px";
+    row.style.margin = "6px 0";
+    var cb = document.createElement("input");
+    cb.type = "checkbox";
+    cb.checked = r.checked;
+    cb.addEventListener("change", function () { r.checked = cb.checked; renderExistingPreview(); });
+    var sp = document.createElement("span");
+    sp.textContent = r.email;
+    row.appendChild(cb);
+    row.appendChild(sp);
+    rc.appendChild(row);
+  });
+}
+
+function buildReadPreview() {
+  var p = state.selectedProject;
+  if (!p || !readMsg) { return null; }
+  var type = byId("typeSelect").value;
+  if (type === "RFP") {
+    var chosen = state.readRecips.filter(function (r) { return r.checked; });
+    if (!chosen.length) { return null; }
+    return "Bid Invitations · " + (p.name || p.code) + " → " +
+           chosen.map(function (r) { return r.email; }).join(", ");
+  }
+  if (isThreadMode()) {
+    var it = state.selectedItem;
+    if (!it) { return null; }
+    var nl = numLabel(type, it.num);
+    return folderLabel(type) + " · existing row: " + (nl ? nl + " " : "") + it.name;
+  }
+  var desc = byId("descInput").value.trim() || cleanSubject(readMsg.subject) || "Email";
+  return folderLabel(type) + " · new row: " + desc + " (" + (p.name || p.code) + ")";
+}
+
+function addToMonday() {
+  var p = state.selectedProject, type = byId("typeSelect").value;
+  if (!p) { showToast("Pick a project first.", "err"); return; }
+  if (state.readBusy) { return; }
+  if (CONFIG.LINK_ENDPOINT.indexOf("PASTE_") === 0) { showToast("Add to Monday is not configured yet.", "err"); return; }
+  var payload = {
+    code: p.code, type: type, mode: "new", itemId: "",
+    description: byId("descInput").value.trim(),
+    recipients: [],
+    user: (Office.context.mailbox.userProfile && Office.context.mailbox.userProfile.emailAddress) || "",
+    message: {}
+  };
+  if (type === "RFP") {
+    payload.recipients = state.readRecips.filter(function (r) { return r.checked; }).map(function (r) { return r.email; });
+    if (!payload.recipients.length) { showToast("Tick at least one subcontractor.", "err"); return; }
+  } else if (isThreadMode()) {
+    if (!state.selectedItem) { showToast("Pick the existing row.", "err"); return; }
+    payload.mode = "existing";
+    payload.itemId = String(state.selectedItem.id || "");
+  }
+  state.readBusy = true;
+  setText("applyExisting", "Adding…");
+  renderExistingPreview();
+  setStatus("readResult", "Reading the email…", false);
+
+  var finish = function () {
+    state.readBusy = false;
+    setText("applyExisting", "Add to Monday");
+    renderExistingPreview();
+  };
+  Office.context.mailbox.item.body.getAsync(Office.CoercionType.Text, function (res) {
+    var body = (res && res.status === Office.AsyncResultStatus.Succeeded) ? (res.value || "") : "";
+    if (body.length > 60000) { body = body.slice(0, 60000); }
+    payload.message = {
+      subject: readMsg.subject, from: readMsg.from, fromName: readMsg.fromName,
+      to: readMsg.to, cc: readMsg.cc, date: readMsg.date,
+      internetMessageId: readMsg.internetMessageId, conversationId: readMsg.conversationId,
+      body: body
+    };
+    setStatus("readResult", "Adding to Monday…", false);
+    fetch(CONFIG.LINK_ENDPOINT, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    })
+      .then(function (r) {
+        return r.json().catch(function () { return { ok: false, error: "HTTP " + r.status }; });
+      })
+      .then(function (data) { showReadResult(data || {}); })
+      .catch(function (err) {
+        setStatus("readResult", "Could not reach Monday (" + err.message + "). Nothing was added — try again.", true);
+      })
+      .then(finish, finish);
+  });
+}
+
+function showReadResult(data) {
+  var el = byId("readResult");
+  if (!el) { return; }
+  var items = data.items || [];
+  if (!data.ok && !items.length) {
+    setStatus("readResult", "Not added: " + (data.error || "unknown error"), true);
+    return;
+  }
+  el.classList.toggle("error", !data.ok);
+  el.innerHTML = "";
+  var head = document.createElement("div");
+  head.style.fontWeight = "600";
+  head.textContent = data.ok ? "Added to Monday ✓" : ("Partly added: " + (data.error || ""));
+  el.appendChild(head);
+  items.forEach(function (i) {
+    var a = document.createElement("a");
+    a.href = "https://gekonny.monday.com/boards/" + i.board + "/pulses/" + i.id;
+    a.target = "_blank";
+    a.rel = "noopener";
+    a.textContent = (i.name || ("#" + i.id)) + (String(i.existing) === "true" ? " (already there — email added)" : "");
+    a.style.display = "block";
+    el.appendChild(a);
+  });
+  if (data.threadFound === false || String(data.threadFound) === "false") {
+    var n = document.createElement("div");
+    n.textContent = "build@ has no copy of this email, so a Follow-up from Monday will start a new email.";
+    el.appendChild(n);
+  }
+  if (data.ok) { showToast("Added to Monday ✓", "ok"); }
 }
 
 /* ---------- clipboard ------------------------------------------------- */
